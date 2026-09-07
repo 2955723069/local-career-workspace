@@ -171,8 +171,8 @@ export function createApp(
       review.scrollIntoView?.({ block: "start" });
     }, { signal });
   }
-  root.addEventListener("interview-updated", () => dashboard?.dispatchEvent(new Event("interview-updated")), { signal });
-  root.addEventListener("review-saved", () => dashboard?.dispatchEvent(new Event("review-saved")), { signal });
+  root.addEventListener("interview-updated", () => bus.emit("interview-updated", undefined), { signal });
+  root.addEventListener("review-saved", () => bus.emit("review-saved", undefined), { signal });
   const refreshOverview = async () => {
     const applicationCount = options.applicationService ? (await options.applicationService.listApplications()).filter((item) => !item.archivedAt).length : 0;
     const interviewRows = options.interviewService ? await options.interviewService.listInterviews() : [];
@@ -185,8 +185,12 @@ export function createApp(
   };
   void refreshOverview();
   root.addEventListener("app-data-changed", () => void refreshOverview(), { signal });
-  root.addEventListener("interview-updated", () => void refreshOverview(), { signal });
   bus.on("app-data-changed", () => void refreshOverview());
+  bus.on("interview-updated", () => {
+    dashboard?.dispatchEvent(new Event("interview-updated"));
+    void refreshOverview();
+  });
+  bus.on("review-saved", () => dashboard?.dispatchEvent(new Event("review-saved")));
 
   const matchingMount = root.querySelector<HTMLElement>(".matching-page-mount");
   if (matchingMount) matchingMount.replaceWith(createMatchingPage(documentRef, {
