@@ -74,7 +74,7 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
     <div class="application-detail__tabs" role="tablist">${TABS.map((t) => `<button type="button" role="tab" data-detail-tab="${t.key}" aria-selected="${t.key === "overview"}">${t.label}</button>`).join("")}</div>
     ${TABS.map((t) => `<div class="application-detail__panel" data-detail-panel="${t.key}"${t.key === "overview" ? "" : " hidden"}></div>`).join("")}
     <p class="application-detail__status" role="status" aria-live="polite"></p>
-    <div class="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-confirm-title" hidden><h3 id="application-confirm-title">确认操作</h3><p data-confirm-summary></p><div><button type="button" data-action="confirm-application-action">确认</button><button type="button" data-action="cancel-application-action">取消</button></div></div>
+    <div class="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-detail-confirm-title" hidden><h3 id="application-detail-confirm-title">确认操作</h3><p data-confirm-summary></p><div><button type="button" data-action="confirm-application-action">确认</button><button type="button" data-action="cancel-application-action">取消</button></div></div>
   `;
 
   const titleElement = root.querySelector<HTMLElement>("#application-detail-title")!;

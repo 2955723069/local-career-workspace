@@ -7,6 +7,11 @@
   gap: var(--s-5);
 }
 
+.application-board[hidden],
+.application-detail-view[hidden] {
+  display: none;
+}
+
 .application-board__controls {
   display: flex;
   flex-wrap: wrap;
@@ -214,21 +219,8 @@
 }
 
 /* 申请详情 */
-.application-detail {
-  margin-top: var(--s-6);
-  border-top: 1px solid var(--line);
-  padding-top: var(--s-5);
-}
-
-.application-detail[hidden],
 .application-confirm[hidden] {
   display: none;
-}
-
-.application-detail__content {
-  display: grid;
-  gap: var(--s-3);
-  margin-top: var(--s-4);
 }
 
 .application-detail__facts {
@@ -262,16 +254,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-2);
   align-items: end;
-}
-
-.application-detail__content ul,
-.application-detail__content ol {
-  margin: 0;
-  padding-left: 22px;
-}
-
-.application-detail__content li {
-  overflow-wrap: anywhere;
 }
 
 /* 申请表单 */
