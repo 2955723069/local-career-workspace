@@ -2,6 +2,7 @@ import type { ResumeLibraryService } from "../../features/resumes/resumeLibrary"
 import type { AnalysisResult, Application, Resume, Stage } from "../../db/types";
 import type { AiAdvisorService } from "../../features/ai/aiAdvisorService";
 import type { AppBus } from "../../app/appBus";
+import { formatJobType, formatWorkMode } from "../../ui/format";
 
 export interface ApplicationBoardOptions {
   applicationService?: {
@@ -97,7 +98,7 @@ export function createApplicationBoard(
         <button type="button" data-view="board" aria-pressed="true">看板</button>
         <button type="button" data-view="list" aria-pressed="false">列表</button>
         <label for="application-job-type">筛选职位类型</label>
-        <select id="application-job-type"><option value="">全部类型</option>${JOB_TYPES.map((value) => `<option value="${value}">${value}</option>`).join("")}</select>
+        <select id="application-job-type"><option value="">全部类型</option>${JOB_TYPES.map((value) => `<option value="${value}">${formatJobType(value)}</option>`).join("")}</select>
         <label class="application-board__archived-toggle"><input type="checkbox" data-show-archived />显示已归档</label>
       </div>
     </div>
@@ -107,9 +108,9 @@ export function createApplicationBoard(
       <div class="application-form__grid">
         <label for="application-company">公司<input id="application-company" name="company" required /></label>
         <label for="application-position">职位<input id="application-position" name="position" required /></label>
-        <label for="application-job-type-field">职位类型<select id="application-job-type-field" name="jobType">${JOB_TYPES.map((value) => `<option value="${value}">${value}</option>`).join("")}</select></label>
+        <label for="application-job-type-field">职位类型<select id="application-job-type-field" name="jobType">${JOB_TYPES.map((value) => `<option value="${value}">${formatJobType(value)}</option>`).join("")}</select></label>
         <label for="application-location">地点<input id="application-location" name="location" /></label>
-        <label for="application-work-mode">工作模式<select id="application-work-mode" name="workMode">${WORK_MODES.map((value) => `<option value="${value}">${value}</option>`).join("")}</select></label>
+        <label for="application-work-mode">工作模式<select id="application-work-mode" name="workMode">${WORK_MODES.map((value) => `<option value="${value}">${formatWorkMode(value)}</option>`).join("")}</select></label>
         <label for="application-salary">薪资<input id="application-salary" name="salaryText" /></label>
         <label for="application-source">来源<input id="application-source" name="source" /></label>
         <label for="application-job-url">招聘网址<input id="application-job-url" name="jobUrl" type="url" /></label>
@@ -177,7 +178,7 @@ export function createApplicationBoard(
       const cards = items.filter((item) => item.stageId === stage.id).map((item) => `
         <article class="application-card${item.archivedAt ? " application-card--archived" : ""}" data-application-id="${esc(item.id)}">
           <h4>${esc(item.company)}${item.archivedAt ? ' <span class="application-card__archived-badge">已归档</span>' : ""}</h4><p>${esc(item.position)}</p>
-          <p class="application-card__meta">${esc(item.location)} · ${esc(item.jobType)} · ${esc(item.workMode)}</p>
+          <p class="application-card__meta">${esc(item.location)} · ${esc(formatJobType(item.jobType))} · ${esc(formatWorkMode(item.workMode))}</p>
           <p class="application-card__stage" style="--stage-color:${esc(stage.color)}">${esc(stage.name)}</p>
           <p class="application-card__resume">${item.currentResumeId ? `简历：${esc(resumes.find((resume) => resume.id === item.currentResumeId)?.name ?? item.currentResumeId)}` : "未绑定简历"}</p>
           <div class="application-card__actions"><button type="button" data-action="details" data-application-id="${esc(item.id)}">查看详情</button><button type="button" data-action="edit" data-application-id="${esc(item.id)}">编辑</button><button type="button" data-action="advance" data-application-id="${esc(item.id)}">推进阶段</button></div>

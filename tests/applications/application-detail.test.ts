@@ -110,4 +110,12 @@ describe("application detail hub", () => {
     await el.show("app-1", "interview");
     expect(el.querySelector('[data-action="open-interview-calendar"]')).toBeTruthy();
   });
+
+  it("localizes timeline event type in the timeline tab", async () => {
+    const el = createApplicationDetail(document, baseServices()) as ApplicationDetailElement;
+    document.body.append(el);
+    await el.show("app-1", "timeline");
+    expect(el.querySelector('[data-detail-panel="timeline"]')?.textContent).toContain("阶段变更");
+    expect(el.querySelector('[data-detail-panel="timeline"]')?.textContent).not.toContain("stage-changed");
+  });
 });

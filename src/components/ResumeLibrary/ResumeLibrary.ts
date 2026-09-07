@@ -1,6 +1,7 @@
 import type { ResumeIngestionService } from "../../features/resumes/ingestion";
 import { ResumeIngestionError } from "../../features/resumes/ingestion";
 import type { AppBus } from "../../app/appBus";
+import { formatResumeStatus } from "../../ui/format";
 
 export interface ResumeLibraryUiService {
   search(query?: string): Promise<any[]>;
@@ -163,7 +164,7 @@ export function createResumeLibrary(
             <div class="resume-library-item__body">
               <h3 title="${escapeHtml(resume.name)}">${escapeHtml(resume.name)}${resume.isDefault ? ' <span class="resume-default-badge">通用</span>' : ""}</h3>
               <p>${escapeHtml(resume.fileName)}</p>
-              <p class="resume-library-item__meta">${escapeHtml(resume.status)}${resume.tags.length ? ` · ${escapeHtml(resume.tags.join("、"))}` : ""}</p>
+              <p class="resume-library-item__meta">${escapeHtml(formatResumeStatus(resume.status))}${resume.tags.length ? ` · ${escapeHtml(resume.tags.join("、"))}` : ""}</p>
             </div>
             <div class="resume-library-item__actions">
               <button type="button" data-action="preview" data-resume-id="${resume.id}">预览文本</button>
