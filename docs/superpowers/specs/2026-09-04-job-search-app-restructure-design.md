@@ -69,11 +69,18 @@ src/styles/components.css     通用组件类（新增）
 
 ## 5. 职位详情枢纽页
 
-- 新增 `createApplicationDetail(documentRef, { applicationId, ...services }): HTMLElement`。
-- 路由分层：`#applications`（看板）→ `#applications/:id`（详情）→ `#applications/:id/matching` 等子标签。浏览器前进/后退可用。
+> **实现修正（2026-09-06，实施第 2 期前的代码勘察结论）**：勘察发现现实与本节初稿假设相反，据此修正方案（决策已确认）。
+>
+> - `ApplicationBoard` 中**已存在**一个内联"职位详情"面板（`showDetail`），已聚合 JD、阶段切换、简历切换、备注、归档/删除、**本地匹配（内联实现）**、**AI 顾问（内联实现）**、简历使用历史、时间线，且**有测试覆盖**（`application-board.test.ts` 覆盖查看详情、run-matching、匹配结果、AI 对话）。
+> - 顶层独立页 `MatchingPage`、`AiPage` 是**功能重复且零 UI 测试**的实现（tests / e2e 均无引用其顶层 tab 或组件选择器）。
+> - 因此初稿"复用 MatchingPage/AiPage 作嵌入式子标签"方向错误：那两个独立页是**未测试的劣化重复品**。修正为——**抽取已测试的内联详情**为枢纽页，**退役**未测试的独立 MatchingPage/AiPage。
+
+- 新增 `createApplicationDetail(documentRef, { ...services }): HTMLElement`——由 `ApplicationBoard` 现有内联 `showDetail` 逻辑**抽取而来**（复用已测试实现，不重写匹配/AI）。
+- 路由分层：`#applications`（看板）→ `#applications/:id`（详情）→ `#applications/:id/:tab` 子标签。浏览器前进/后退可用。
 - 子标签**懒加载**：进入某子标签才拉取对应数据，避免一次性全量加载。
-- 现有 `MatchingPage`、`AiPage` 组件**改造为接收 `applicationId` 的嵌入式面板**，从顶层视图降级为详情子标签——**逻辑复用，不重写**。原顶层"选择职位"下拉在详情语境下由上下文提供，移除。
-- 详情页顶部固定显示「公司 · 职位 · 当前简历 · 阶段」上下文条，各子标签共享，无需重选。
+- **退役**顶层 `matching`、`ai` 视图与其独立组件文件（`MatchingPage.ts`/`AiPage.ts`）；其功能由详情页的匹配/AI 子标签承担。顶层从 7 区收敛到 5 区。
+- 详情页顶部固定显示「公司 · 职位 · 当前简历 · 阶段」上下文条，各子标签共享，无需重选。原独立页的"选择职位"下拉不再需要。
+- 面试日历保留顶层（跨职位时间视图）；详情页的「面试」子标签只展示**本职位**的面试与复盘。
 
 ## 6. UI / 本地化统一层
 
@@ -94,10 +101,12 @@ src/styles/components.css     通用组件类（新增）
 
 ## 8. 分期交付
 
-一次性全推风险过大。分 4 期，每期独立可交付，测试全绿再进下一期：
+一次性全推风险过大。分期交付，每期独立可交付，测试全绿再进下一期：
 
-1. **地基期**：`appBus` + `router` 抽出 + `createApp` 拆分（抽简历/设置组件、删死代码、统一工厂写法）。用户可见变化最小，纯结构治理。
-2. **枢纽期**：职位详情页 + 匹配/AI 降级为子标签 + 顶层收敛到 5 区。← 体验质变在此发生。
+1. **地基期**（✅ 已完成，已合并 master）：`appBus` + `router` 抽出 + `createApp` 拆分（抽简历/设置组件、删死代码、统一工厂写法）。用户可见变化最小，纯结构治理。
+2. **枢纽期**（拆为 2a/2b，降低单次改动风险）：
+   - **2a**：抽取内联详情为 `createApplicationDetail` 路由枢纽页 + 子标签（概览 / JD / 简历 / 匹配 / AI / 时间线 / 备注——均为详情现已具备的内容）；顶层从 7 区收敛到 5 区（退役 matching/ai 顶层 tab 与独立组件）。← 体验质变在此发生。
+   - **2b**：把「本职位面试 + 复盘」作为新子标签接入详情页（按 applicationId 过滤 interviewService/reviewService）。
 3. **统一层期**：`format.ts` 本地化 + 按钮层级 + 表单渐进披露 + `components.css`。
 4. **重交互期**：看板拖拽 / 月历网格 / 时区下拉 / 恢复批量。
 
