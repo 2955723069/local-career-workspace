@@ -15,7 +15,9 @@ test("creates a job with JD and reference URL, then switches views", async ({ pa
   await page.reload();
   await expect(page.locator(".application-card")).toContainText("E2E 公司");
   await page.getByRole("button", { name: "详情" }).click({ force: true });
-  await expect(page.locator(".application-detail")).toContainText("TypeScript React");
+  await expect(page.locator(".application-detail__status")).toContainText("已载入");
+  await page.locator('[data-detail-tab="jd"]').click({ force: true });
+  await expect(page.locator(".application-detail-view")).toContainText("TypeScript React");
 });
 
 test("keeps long application names readable on mobile", async ({ page }) => {

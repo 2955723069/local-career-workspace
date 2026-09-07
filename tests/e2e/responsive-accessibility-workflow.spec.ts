@@ -93,6 +93,8 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
   await page.reload();
   await expect(page.locator(".application-card")).toContainText("离线 E2E 公司");
   await page.getByRole("button", { name: "查看详情" }).click({ force: true });
+  await expect(page.locator(".application-detail__status")).toContainText("已载入");
+  await page.locator('[data-detail-tab="matching"]').click({ force: true });
   const outboundRequests: string[] = [];
   page.on("request", (request) => {
     if (request.url().startsWith("http") && !request.url().startsWith("http://127.0.0.1:4175")) outboundRequests.push(request.url());
@@ -129,6 +131,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
 
   const exportPassword = page.getByLabel("备份密码").first();
   await exportPassword.fill(BACKUP_PASSWORD);
+  await page.getByLabel("确认备份密码").fill(BACKUP_PASSWORD);
   const exportButton = page.getByRole("button", { name: "导出轻量备份" });
   await expect(exportButton).toBeEnabled();
   await exportButton.click({ force: true });
@@ -142,7 +145,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
 
   const importFile = page.locator("#backup-import-file");
   await importFile.setInputFiles({ name: "career-backup-light.json", mimeType: "application/json", buffer: Buffer.from(new Uint8Array(backupBytes)) as never });
-  await expect(page.getByLabel("备份密码")).toHaveCount(2);
+  await expect(page.getByLabel("备份密码")).toHaveCount(3);
   await page.getByLabel("备份密码").last().fill(BACKUP_PASSWORD);
   await page.getByRole("button", { name: "解密并查看概览" }).press("Enter");
   await expect(page.locator('[data-import-step="overview"]')).toBeVisible();

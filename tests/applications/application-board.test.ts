@@ -114,12 +114,15 @@ describe("application board UI", () => {
     await flush();
     root.querySelector<HTMLButtonElement>('[data-action="details"][data-application-id="application-1"]')?.click();
     await flush();
-    expect(root.querySelector(".application-detail")?.textContent).toContain("简历 A");
-    root.querySelector<HTMLButtonElement>('[data-action="delete"][data-application-id="application-1"]')?.click();
+    const detailView = root.querySelector<HTMLElement>(".application-detail-view");
+    expect(detailView).toBeTruthy();
+    expect(detailView?.hasAttribute("hidden")).toBe(false);
+    expect(detailView?.textContent).toContain("简历 A");
+    detailView?.querySelector<HTMLButtonElement>('[data-action="delete"][data-application-id="application-1"]')?.click();
     await flush();
-    root.querySelector<HTMLButtonElement>('[data-action="cancel-application-action"]')?.click();
+    detailView?.querySelector<HTMLButtonElement>('[data-action="cancel-application-action"]')?.click();
     expect(deps.applicationService.confirmDelete).not.toHaveBeenCalled();
-    expect(root.querySelector('.application-board__status')?.textContent).toContain("未改变");
+    expect(detailView?.querySelector(".application-detail__status")?.textContent).toContain("已取消操作，数据未改变");
   });
 
   it("runs local matching from details and reopens a saved history result", async () => {
@@ -131,10 +134,13 @@ describe("application board UI", () => {
     await flush();
     root.querySelector<HTMLButtonElement>('[data-action="details"][data-application-id="application-1"]')?.click();
     await flush();
-    expect(root.querySelector('[data-action="run-matching"]')).toBeTruthy();
-    root.querySelector<HTMLButtonElement>('[data-action="run-matching"]')?.click();
+    const detailView = root.querySelector<HTMLElement>(".application-detail-view");
+    detailView?.querySelector<HTMLButtonElement>('[data-detail-tab="matching"]')?.click();
+    await flush();
+    expect(detailView?.querySelector('[data-action="run-matching"]')).toBeTruthy();
+    detailView?.querySelector<HTMLButtonElement>('[data-action="run-matching"]')?.click();
     await flush();
     expect(matchingService.run).toHaveBeenCalledWith("application-1", "resume-a");
-    expect(root.querySelector(".matching-result")?.textContent).toContain("仅代表文本证据");
+    expect(detailView?.querySelector(".matching-result")?.textContent).toContain("仅代表文本证据");
   });
 });
