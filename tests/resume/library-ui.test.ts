@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app/createApp";
 import type { ResumeLibraryService } from "../../src/features/resumes/resumeLibrary";
+import { createResumeLibrary } from "../../src/components/ResumeLibrary/ResumeLibrary";
 
 function libraryWithResume(): ResumeLibraryService {
   return {
@@ -51,5 +52,15 @@ describe("resume library UI", () => {
     expect(root.querySelector('[data-action="download"]')).toBeTruthy();
     expect(root.querySelector('[data-action="delete"]')).toBeTruthy();
     expect(root.querySelector(".resume-delete-preview [data-action='confirm-delete']")).toBeTruthy();
+  });
+
+  it("createResumeLibrary renders the library section standalone with core controls", () => {
+    const section = createResumeLibrary(document);
+    expect(section.matches("section.resume-library")).toBe(true);
+    expect(section.querySelector("#resume-library-title")?.textContent).toContain("简历版本库");
+    expect(section.querySelector(".resume-file-input")).toBeTruthy();
+    expect(section.querySelector("#resume-search")).toBeTruthy();
+    expect(section.querySelector(".resume-library-list")).toBeTruthy();
+    expect(section.querySelector(".resume-delete-preview")?.hasAttribute("hidden")).toBe(true);
   });
 });
