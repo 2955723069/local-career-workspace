@@ -3,11 +3,13 @@
  * 取代脆弱易漏的 root 冒泡 CustomEvent。订阅生命周期由可选 signal 托管。
  */
 export type AppEventMap = {
-  "app-navigate": { name: string; applicationId?: string };
+  "app-navigate": { name: string; applicationId?: string; tab?: string };
   "app-data-changed": void;
   "resumes-changed": { count: number };
   "interview-updated": void;
   "review-saved": void;
+  "application-selected": { applicationId: string; tab?: string };
+  "application-list": void;
 };
 
 export interface AppBus {
