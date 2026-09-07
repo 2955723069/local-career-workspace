@@ -13,6 +13,7 @@ import { createAiPage } from "../components/AiPage/AiPage";
 import { createResumeLibrary } from "../components/ResumeLibrary/ResumeLibrary";
 import { createSettingsPage } from "../components/SettingsPage/SettingsPage";
 import { createAppBus } from "./appBus";
+import { setupRouter } from "./router";
 
 export interface CreateAppOptions {
   resumeLibrary?: any;
@@ -166,7 +167,7 @@ export function createApp(
       const detail = (event as CustomEvent<string>).detail;
       if (!detail) return;
       review.dispatchEvent(new CustomEvent("interview-selected", { detail }));
-      navigateToView(root, documentRef, "interviews");
+      bus.emit("app-navigate", { name: "interviews" });
       review.scrollIntoView?.({ block: "start" });
     }, { signal });
   }
@@ -192,7 +193,7 @@ export function createApp(
     applicationService: options.applicationService,
     resumeLibrary: options.resumeLibrary,
     matchingService: options.matchingService,
-    onOpenAi: (applicationId) => navigateToView(root, documentRef, "ai", applicationId),
+    onOpenAi: (applicationId) => bus.emit("app-navigate", { name: "ai", applicationId }),
     signal,
   }));
   const aiMount = root.querySelector<HTMLElement>(".ai-page-mount");
@@ -201,7 +202,7 @@ export function createApp(
     aiPage = createAiPage(documentRef, {
     applicationService: options.applicationService,
     aiAdvisorService: options.aiAdvisorService,
-    onOpenSettings: () => navigateToView(root, documentRef, "settings"),
+    onOpenSettings: () => bus.emit("app-navigate", { name: "settings" }),
     signal,
     });
     aiMount.replaceWith(aiPage);
@@ -236,73 +237,7 @@ export function createApp(
     if (resumeSummary) resumeSummary.textContent = `${count} 份简历`;
   });
 
-  setupViewNavigation(root, documentRef, signal);
+  setupRouter({ root, documentRef, bus, signal });
 
   return root;
-}
-
-const APP_VIEWS = ["overview", "resumes", "applications", "interviews", "matching", "ai", "settings"] as const;
-type AppView = (typeof APP_VIEWS)[number];
-
-function navigateToView(root: HTMLElement, documentRef: Document, name: AppView, applicationId?: string): void {
-  root.dispatchEvent(new CustomEvent("app-navigate", { detail: { name, applicationId } }));
-  if (applicationId) root.querySelector<HTMLElement>(".ai-page")?.dispatchEvent(new CustomEvent("ai-application-selected", { detail: applicationId }));
-  if (!documentRef.defaultView) return;
-}
-
-function setupViewNavigation(root: HTMLElement, documentRef: Document, signal?: AbortSignal): void {
-  const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".app-nav__tab"));
-  const views = Array.from(root.querySelectorAll<HTMLElement>(".app-view"));
-  if (!tabs.length || !views.length) return;
-
-  const view = documentRef.defaultView;
-  const isKnown = (name: string): name is AppView =>
-    (APP_VIEWS as readonly string[]).includes(name);
-
-  const showView = (name: AppView, push = false, applicationId?: string) => {
-    views.forEach((section) => {
-      section.hidden = section.dataset.viewPanel !== name;
-    });
-    tabs.forEach((tab) => {
-      tab.setAttribute("aria-selected", String(tab.dataset.view === name));
-    });
-    root.dispatchEvent(new CustomEvent("app-view-changed", { detail: name }));
-    if (view) {
-      const current = view.location.hash.replace(/^#/, "");
-      if (push || current !== name) {
-        try {
-          const url = new URL(view.location.href);
-          url.hash = name;
-          if (applicationId) url.searchParams.set("applicationId", applicationId);
-          else url.searchParams.delete("applicationId");
-          (push ? view.history.pushState : view.history.replaceState).call(view.history, null, "", url.toString());
-        } catch {
-          /* history 不可用时忽略,视图切换仍生效 */
-        }
-      }
-    }
-  };
-
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const name = tab.dataset.view;
-      if (name && isKnown(name)) showView(name, true);
-    });
-  });
-
-  root.addEventListener("app-navigate", (event) => {
-    const detail = (event as CustomEvent<{ name?: string; applicationId?: string }>).detail;
-    if (detail?.name && isKnown(detail.name)) showView(detail.name, true, detail.applicationId);
-  }, { signal });
-  view?.addEventListener("hashchange", () => {
-    const name = view.location.hash.replace(/^#/, "");
-    showView(isKnown(name) ? name : "overview");
-  }, { signal });
-  view?.addEventListener("popstate", () => {
-    const name = view.location.hash.replace(/^#/, "");
-    showView(isKnown(name) ? name : "overview");
-  }, { signal });
-
-  const initial = view?.location.hash.replace(/^#/, "") ?? "";
-  showView(isKnown(initial) ? initial : "overview");
 }
