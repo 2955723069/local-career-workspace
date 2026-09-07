@@ -1,0 +1,218 @@
+/*
+ * Resumes — 简历库、上传、编辑器
+ */
+
+.resume-library {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.resume-library-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.resume-upload-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 38px;
+  padding: 9px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.resume-upload-button:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.resume-upload-button.is-loading {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.resume-upload-button.is-loading::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: resume-upload-spin 0.7s linear infinite;
+}
+
+@keyframes resume-upload-spin {
+  to { transform: rotate(360deg); }
+}
+
+.resume-file-input {
+  display: none;
+}
+
+.resume-library-status {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.resume-library-list {
+  display: grid;
+  gap: var(--s-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.resume-library-item {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.resume-library-item:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.resume-library-item__body {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.resume-library-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.resume-library-item__actions,
+.resume-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.resume-editor {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.resume-editor[hidden],
+.resume-metadata-editor[hidden],
+.resume-delete-preview[hidden] {
+  display: none;
+}
+
+.resume-metadata-editor {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.resume-refresh {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--accent-text);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.resume-refresh:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-weak-border);
+}
+
+.resume-delete-preview {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.resume-default-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  background: var(--accent-weak-bg);
+  border-radius: 999px;
+}
+
+.resume-usage-overview {
+  margin-top: var(--s-6);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+
+.resume-usage-overview h3 {
+  margin-bottom: var(--s-3);
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.usage-table th,
+.usage-table td {
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.usage-table th {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.usage-table tr:hover {
+  background: var(--surface-2);
+}
+
+.usage-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 999px;
+}
+
+.usage-badge--default {
+  color: var(--accent-text);
+  background: var(--accent-weak-bg);
+}
+
+.usage-badge--custom {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.usage-badge--none {
+  color: var(--muted);
+  background: var(--surface-2);
+}

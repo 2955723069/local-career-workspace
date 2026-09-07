@@ -1,0 +1,12 @@
+{
+  "transport": "local",
+  "acceptedAt": "2026-09-03T03:06:14.002Z",
+  "trigger": "end-of-run",
+  "snapshotPath": "/home/qh/project/c3/.teamos/memory/2026-09-03T03-06-13-990Z-end-of-run.json",
+  "schema": "teamos/memory/v1",
+  "project": {
+    "dir": "/home/qh/project/c3",
+    "name": "c3"
+  },
+  "features": 8
+}

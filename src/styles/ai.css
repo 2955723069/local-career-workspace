@@ -1,0 +1,125 @@
+/*
+ * AI — 发送预览模态、AI 结果与对话
+ */
+
+/* 发送预览:全屏遮罩 + 居中面板 */
+.send-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: var(--s-4);
+  background: rgb(18 30 24 / 45%);
+  backdrop-filter: blur(2px);
+}
+
+.send-preview[hidden] {
+  display: none;
+}
+
+.send-preview__panel {
+  display: grid;
+  gap: var(--s-3);
+  width: min(34rem, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.send-preview__panel dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+}
+
+.send-preview__panel dt {
+  font-weight: var(--fw-semibold);
+  color: var(--text-2);
+}
+
+.send-preview__panel dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.send-preview__warning,
+.ai-authenticity-risk {
+  color: var(--danger);
+}
+
+.send-preview__warning {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-sm);
+  background: var(--danger-bg);
+}
+
+.send-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  justify-content: flex-end;
+  margin-top: var(--s-4);
+}
+
+.send-preview__actions button {
+  min-height: 40px;
+}
+
+.send-preview__actions button[data-action="cancel-send"] {
+  border-color: var(--line-strong);
+  color: var(--accent-text);
+  background: var(--surface);
+}
+
+.send-preview__actions button[data-action="cancel-send"]:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-weak-border);
+}
+
+.send-preview__status {
+  min-height: 1.5rem;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+/* AI 结果与对话 */
+.ai-result {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-4);
+}
+
+.ai-suggestion-label {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.04em;
+  color: var(--accent-text);
+}
+
+.ai-conversation {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.ai-conversation article {
+  border-top: 1px solid var(--line);
+  padding: var(--s-3) 0;
+}
+
+.ai-message-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

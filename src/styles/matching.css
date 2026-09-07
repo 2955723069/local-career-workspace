@@ -1,0 +1,99 @@
+/*
+ * Matching — 匹配面板、运行控制、结果与历史
+ */
+
+.matching-panel {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  margin-top: var(--s-5);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-4);
+}
+
+.matching-run-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: end;
+}
+
+.matching-run-controls label {
+  display: grid;
+  gap: var(--s-1);
+  min-width: min(100%, 240px);
+}
+
+.matching-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: var(--s-3) 0;
+}
+
+.matching-history__item {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+/* 结果块:左侧强调色条 */
+.matching-result {
+  min-width: 0;
+  border-left: 3px solid var(--accent);
+  padding-left: var(--s-3);
+}
+
+.matching-result__meta,
+.matching-disclaimer {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.matching-coverage,
+.matching-lists {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.matching-lists {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.matching-coverage div {
+  min-width: 0;
+}
+
+.matching-coverage dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.matching-coverage dd {
+  margin: var(--s-1) 0 0;
+  font-weight: var(--fw-bold);
+  color: var(--accent-text);
+}
+
+.matching-lists h5,
+.matching-result h5 {
+  margin: var(--s-3) 0 var(--s-1);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.matching-lists li,
+.matching-evidence li,
+.matching-disclaimer {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .matching-coverage,
+  .matching-lists {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

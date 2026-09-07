@@ -1,0 +1,174 @@
+/*
+ * Layout — 应用外壳、顶栏、主区块与区块标题
+ */
+
+.app-shell {
+  width: min(100% - 2 * var(--s-4), var(--shell-max));
+  margin: 0 auto;
+  padding-bottom: var(--s-9);
+}
+
+/* 顶栏 */
+.topbar {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  margin-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--text-on-accent);
+  background: linear-gradient(150deg, var(--accent) 0%, var(--accent-active) 100%);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+}
+
+/* 本地状态徽标 */
+.local-status {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 12px;
+  border: 1px solid var(--accent-weak-border);
+  border-radius: var(--r-pill);
+  background: var(--accent-weak);
+  color: var(--accent-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  overflow-wrap: anywhere;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #25845d;
+  box-shadow: 0 0 0 3px rgb(37 132 93 / 20%);
+}
+
+/* 主内容纵向节奏 */
+main {
+  display: grid;
+  padding-top: var(--s-8);
+}
+
+/* 区块标题体系 */
+.section-label {
+  margin: 0 0 var(--s-3);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.section-heading,
+.overview-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+
+.overview-heading {
+  align-items: end;
+}
+
+.today {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.settings-panel,
+.data-management-panel {
+  display: grid;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.settings-preferences {
+  display: grid;
+  max-width: 420px;
+  gap: var(--s-4);
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.settings-status,
+.data-preview-summary {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.danger-action {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.danger-action:hover {
+  border-color: var(--danger-strong);
+  background: var(--danger-strong);
+}
+
+.data-clear-dialog {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-sm);
+  background: var(--danger-bg);
+}
+
+.data-clear-dialog h3,
+.data-clear-dialog p {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: var(--s-3);
+  }
+
+  main {
+    padding-top: var(--s-7);
+  }
+
+  .settings-panel,
+  .data-management-panel {
+    padding: var(--s-4);
+  }
+}

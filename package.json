@@ -1,0 +1,27 @@
+{
+  "name": "local-career-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "sh scripts/run-e2e.sh",
+    "check:production": "npm run build && node --experimental-strip-types scripts/check-production.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.0.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "mammoth": "^1.12.2",
+    "pdfjs-dist": "^6.3.289"
+  }
+}

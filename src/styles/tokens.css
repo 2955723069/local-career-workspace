@@ -1,0 +1,87 @@
+/*
+ * Design tokens — 现代简约 · 浅色 · 森林绿
+ * 所有其他样式文件只应引用这里定义的变量,便于统一调整。
+ */
+:root {
+  /* 画布与表面 */
+  --bg: #fafbf8;
+  --bg-gradient-top: #f4f6f0;
+  --surface: #ffffff;
+  --surface-2: #f7f9f4;
+  --surface-3: #f1f4ec;
+
+  /* 文字三级 */
+  --text: #1a201c;
+  --text-2: #59635b;
+  --text-3: #8b938b;
+  --text-on-accent: #ffffff;
+
+  /* 描边 */
+  --line: #e7eae2;
+  --line-strong: #d6dace;
+
+  /* 品牌 — 森林绿 */
+  --accent: #1d6b4d;
+  --accent-hover: #175a40;
+  --accent-active: #124a34;
+  --accent-weak: #ecf5ef;
+  --accent-weak-border: #cbe5d6;
+  --accent-text: #14503a;
+
+  /* 状态色 */
+  --warn: #8a5a12;
+  --warn-bg: #fdf8ec;
+  --warn-border: #f0dcae;
+  --danger: #a1352f;
+  --danger-strong: #b35c35;
+  --danger-bg: #fbefee;
+  --danger-border: #ecccc8;
+
+  /* 圆角 */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* 阴影(柔和、克制) */
+  --shadow-xs: 0 1px 2px rgb(18 30 24 / 5%);
+  --shadow-sm: 0 1px 3px rgb(18 30 24 / 6%), 0 1px 2px rgb(18 30 24 / 4%);
+  --shadow-md: 0 6px 20px -6px rgb(18 30 24 / 12%);
+  --shadow-lg: 0 18px 48px -12px rgb(18 30 24 / 22%);
+
+  /* 间距阶梯(8px 基准) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 48px;
+  --s-9: 64px;
+
+  /* 字号阶梯 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: 30px;
+
+  /* 字重 */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* 过渡 */
+  --transition: 150ms ease;
+
+  /* 内容宽度 */
+  --shell-max: 1120px;
+
+  /* 看板阶段默认色(可被 JS 内联 --stage-color 覆盖) */
+  --stage-color: #64748b;
+}

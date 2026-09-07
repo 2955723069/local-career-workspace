@@ -1,0 +1,83 @@
+/*
+ * Navigation — 顶部标签栏与视图容器
+ */
+
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  gap: var(--s-1);
+  margin: 0 calc(-1 * var(--s-1));
+  padding: var(--s-2) var(--s-1);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* 标签按钮:重置全局 button 的主色样式,呈现为 tab */
+.app-nav__tab {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.app-nav__tab:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+.app-nav__tab[aria-selected="true"] {
+  color: var(--accent-text);
+  background: var(--accent-weak);
+  border-color: var(--accent-weak-border);
+  font-weight: var(--fw-semibold);
+}
+
+.app-nav__tab[aria-selected="true"]:hover {
+  background: var(--accent-weak);
+}
+
+.app-nav__tab:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* 视图容器:纵向节奏,非当前视图隐藏 */
+.app-view {
+  display: grid;
+  gap: var(--s-8);
+}
+
+.app-view[hidden] {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .app-nav {
+    gap: 0;
+  }
+
+  .app-nav__tab {
+    padding: 8px 12px;
+    font-size: var(--fs-base);
+  }
+
+  .app-view {
+    gap: var(--s-7);
+  }
+}

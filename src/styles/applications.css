@@ -1,0 +1,385 @@
+/*
+ * Applications — 申请看板、列表、详情、表单、阶段管理
+ */
+
+.application-board {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.application-board__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.application-board__status {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* 横向看板:每个阶段一列,可横向滚动 */
+.application-board-view {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+  padding-bottom: var(--s-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.application-board-view[hidden] {
+  display: none;
+}
+
+.application-stage-column {
+  display: grid;
+  gap: var(--s-3);
+  align-content: start;
+  min-width: 240px;
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+}
+
+.application-stage-column > h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-2);
+  font-size: var(--fs-md);
+  overflow-wrap: anywhere;
+}
+
+.application-stage-column > h3 span,
+.application-card__stage {
+  border-left: 3px solid var(--stage-color, #64748b);
+  padding-left: 7px;
+}
+
+.application-stage-column small {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+/* 申请卡片 */
+.application-card {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.application-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.application-card--archived {
+  opacity: 0.72;
+  background: var(--surface-muted, var(--surface));
+}
+
+.application-card__archived-badge {
+  display: inline-block;
+  margin-left: var(--s-1);
+  padding: 1px 7px;
+  font-size: 0.72em;
+  font-weight: var(--fw-semibold);
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--text-muted, inherit);
+  vertical-align: middle;
+}
+
+.application-board__archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  white-space: nowrap;
+}
+
+.application-card h4,
+.application-card p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.application-card h4 {
+  font-size: var(--fs-md);
+}
+
+.application-card p {
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+}
+
+.application-card__stage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+
+.application-card__actions,
+.application-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+/* 列表视图 */
+.application-list-view {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+}
+
+.application-list-view[hidden] {
+  display: none;
+}
+
+.application-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(100px, 1fr) minmax(90px, 0.7fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.application-list-row:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+.application-list-row > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: var(--s-1);
+}
+
+.application-list-row span,
+.application-list-row strong {
+  overflow-wrap: anywhere;
+}
+
+.application-list-row span {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* 阶段管理 */
+.stage-manager {
+  margin-top: var(--s-7);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-5);
+}
+
+.stage-manager__list {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  padding: 0;
+  list-style: none;
+}
+
+.stage-manager__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto auto auto auto;
+  align-items: end;
+  gap: var(--s-2);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--s-2);
+}
+
+.stage-manager__item input[type="color"] {
+  height: 36px;
+  padding: 3px;
+}
+
+/* 申请详情 */
+.application-detail {
+  margin-top: var(--s-6);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-5);
+}
+
+.application-detail[hidden],
+.application-confirm[hidden] {
+  display: none;
+}
+
+.application-detail__content {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}
+
+.application-detail__facts {
+  display: grid;
+  grid-template-columns: minmax(80px, 120px) minmax(0, 1fr);
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+}
+
+.application-detail__facts dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.application-detail__facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.application-long-text {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.application-detail__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  align-items: end;
+}
+
+.application-detail__content ul,
+.application-detail__content ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.application-detail__content li {
+  overflow-wrap: anywhere;
+}
+
+/* 申请表单 */
+.application-form {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.application-form__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.application-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-4);
+}
+
+.application-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+/* 删除确认(居中模态) */
+.application-confirm {
+  position: fixed;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  width: min(90vw, 460px);
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: var(--s-3);
+  border: 1px solid var(--danger-border);
+  border-top: 3px solid var(--danger-strong);
+  border-radius: var(--r-md);
+  padding: var(--s-5);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.application-confirm p {
+  overflow-wrap: anywhere;
+}
+
+.application-confirm > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+.application-confirm button:first-child {
+  border-color: var(--danger-strong);
+  color: var(--text-on-accent);
+  background: var(--danger-strong);
+}
+
+@media (max-width: 720px) {
+  .application-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .application-list-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .application-list-row > div:nth-child(2),
+  .application-list-row > div:nth-child(3) {
+    font-size: var(--fs-xs);
+  }
+
+  .application-detail__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage-manager__item {
+    grid-template-columns: minmax(0, 1fr) 76px;
+  }
+
+  .application-board__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .application-board__controls {
+    justify-content: flex-start;
+  }
+
+  .application-board-view {
+    grid-auto-columns: minmax(85%, 1fr);
+  }
+
+  .application-form__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    width: 100%;
+    padding: var(--s-2) 0;
+    background: var(--bg);
+  }
+
+  .application-form__actions button {
+    flex: 1 1 100%;
+  }
+}

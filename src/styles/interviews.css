@@ -1,0 +1,354 @@
+/*
+ * Interviews — 面试日历、面试表单、改期、复盘、提醒
+ */
+
+.interview-calendar,
+.interview-review {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-6);
+}
+
+.interview-calendar {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.interview-calendar__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* 这些区域内的按钮默认为次级(浅底)风格 */
+.interview-calendar__views button,
+.interview-form button,
+.reschedule-form button,
+.notification-fallback button,
+.interview-item button,
+.interview-review button {
+  min-height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 7px 12px;
+  color: var(--accent-text);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.interview-calendar__views button:hover,
+.interview-form button:hover,
+.reschedule-form button:hover,
+.notification-fallback button:hover,
+.interview-item button:hover,
+.interview-review button:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-weak-border);
+}
+
+/* 选中态 / 主提交按钮 = 主色 */
+.interview-calendar__views button[aria-pressed="true"],
+.interview-form > button[type="submit"],
+.interview-review button[type="submit"] {
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  background: var(--accent);
+}
+
+.interview-calendar__views button[aria-pressed="true"]:hover,
+.interview-form > button[type="submit"]:hover,
+.interview-review button[type="submit"]:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.interview-calendar__status {
+  min-height: 24px;
+  margin-top: var(--s-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.interview-form {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.interview-form h3,
+.reschedule-form h3,
+.in-app-reminders h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+
+.interview-form__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.interview-form__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+
+.interview-form label,
+.interview-review label {
+  display: grid;
+  min-width: 0;
+  gap: var(--s-1);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.interview-form input,
+.interview-form select,
+.interview-form textarea,
+.interview-review input,
+.interview-review textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.interview-form fieldset {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+.interview-form fieldset label {
+  display: flex;
+  align-items: center;
+}
+
+.interview-form fieldset input {
+  width: auto;
+}
+
+/* 通知回退提示 */
+.notification-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: var(--s-3) 0 0;
+  border: 1px solid var(--warn-border);
+  border-left: 3px solid var(--danger-strong);
+  border-radius: var(--r-sm);
+  padding: var(--s-2) var(--s-3);
+  color: var(--warn);
+  background: var(--warn-bg);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.notification-fallback p {
+  margin: 0;
+}
+
+.notification-failures {
+  margin: var(--s-2) 0 0;
+  color: #8a3f29;
+  font-size: var(--fs-sm);
+}
+
+/* 改期表单 */
+.reschedule-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto;
+  align-items: end;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  background: var(--surface);
+}
+
+.reschedule-form[hidden] {
+  display: none;
+}
+
+.reschedule-form h3 {
+  grid-column: 1 / -1;
+}
+
+.reschedule-form label {
+  display: grid;
+  min-width: 0;
+  gap: var(--s-1);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.reschedule-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* 面试列表 */
+.interview-calendar__list {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}
+
+.interview-item {
+  display: grid;
+  gap: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.interview-item:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.interview-item h3,
+.interview-item p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.interview-item h3 {
+  font-size: var(--fs-lg);
+}
+
+.interview-item p {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.interview-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+/* 复盘 */
+.interview-review {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.interview-review form {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.interview-review textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.interview-review__questions {
+  display: grid;
+  gap: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2, 8px);
+  padding: var(--s-3);
+}
+
+.interview-review__question-list {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.interview-review__question {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: var(--s-2);
+  align-items: end;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: var(--s-3);
+}
+
+.interview-review__question:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.interview-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* 应用内提醒 */
+.in-app-reminders {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-4);
+}
+
+.in-app-reminders ul {
+  margin: var(--s-3) 0 0;
+  padding-left: 22px;
+}
+
+.in-app-reminders li {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .interview-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reschedule-form,
+  .interview-review__questions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interview-review__question {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notification-fallback {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .notification-fallback button {
+    width: 100%;
+  }
+
+  .interview-review__actions {
+    width: 100%;
+  }
+
+  .interview-form > button[type="submit"],
+  .interview-review__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: var(--s-2) 0;
+    background: var(--bg);
+  }
+
+  .interview-review__actions button {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,124 @@
+/*
+ * Dashboard — 概览摘要与仪表盘面板
+ */
+
+.dashboard {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.dashboard__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.dashboard-status {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* 概览统计卡 */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s-4);
+}
+
+.summary-item {
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.summary-item:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-item--accent {
+  border-color: var(--accent-weak-border);
+  background: var(--accent-weak);
+}
+
+.summary-item dt,
+.summary-item dd {
+  margin: 0;
+}
+
+.summary-item dt {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.summary-item dd {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--accent-text);
+}
+
+.count {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: var(--accent-text);
+}
+
+/* 仪表盘面板网格 */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--s-5);
+}
+
+.dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.dashboard-panel:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-panel h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+
+.dashboard-panel--warning {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+}
+
+.dashboard-fallback-note {
+  margin: 0;
+  color: var(--warn);
+  font-size: var(--fs-sm);
+}
+
+.dashboard-empty {
+  color: var(--text-2);
+}
+
+@media (max-width: 720px) {
+  .summary-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
