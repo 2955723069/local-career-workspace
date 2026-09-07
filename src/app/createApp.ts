@@ -134,6 +134,8 @@ export function createApp(
       resumeLibrary: options.resumeLibrary,
       matchingService: options.matchingService,
       aiAdvisorService: options.aiAdvisorService,
+      interviewService: options.interviewService,
+      reviewService: options.reviewService,
       bus,
       signal,
     }) as ApplicationDetailElement;

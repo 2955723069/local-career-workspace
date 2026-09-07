@@ -17,6 +17,10 @@ function baseServices(overrides: Record<string, unknown> = {}) {
     },
     stageService: { listStages: async () => stages },
     resumeLibrary: { search: async () => resumes },
+    interviewService: { listInterviews: async (appId?: string) => appId === "app-1" ? [
+      { id: "iv-1", applicationId: "app-1", round: 1, type: "video", title: "技术一面", startsAt: "2026-09-10T02:00:00.000Z", timezone: "UTC", status: "completed", reminders: [], locationOrLink: "", interviewer: "王工", note: "" },
+    ] : [] },
+    reviewService: { getReview: async () => undefined, saveReview: vi.fn(async (id: string, input: any) => ({ ...input, interviewId: id, id: "rv-1", createdAt: "2026-09-10T00:00:00.000Z", updatedAt: "2026-09-10T00:00:00.000Z" })) },
     ...overrides,
   } as any;
 }
@@ -75,5 +79,35 @@ describe("application detail hub", () => {
     const el = createApplicationDetail(document, {} as any) as ApplicationDetailElement;
     document.body.append(el);
     await expect(el.show("app-1")).resolves.toBeUndefined();
+  });
+
+  it("renders the interview tab listing this application's interviews", async () => {
+    const el = createApplicationDetail(document, baseServices()) as ApplicationDetailElement;
+    document.body.append(el);
+    await el.show("app-1", "interview");
+    expect(el.querySelector('[data-detail-tab="interview"]')).toBeTruthy();
+    expect(el.querySelector('[data-detail-panel="interview"]')?.hasAttribute("hidden")).toBe(false);
+    expect(el.querySelector('[data-detail-panel="interview"]')?.textContent).toContain("技术一面");
+    expect(el.querySelector('[data-detail-panel="interview"]')?.textContent).toContain("已完成"); // status 中文
+    expect(el.querySelector('[data-action="fill-review"][data-interview-id="iv-1"]')).toBeTruthy();
+  });
+
+  it("selecting fill-review switches to the review tab and targets that interview", async () => {
+    const el = createApplicationDetail(document, baseServices()) as ApplicationDetailElement;
+    document.body.append(el);
+    await el.show("app-1", "interview");
+    (el.querySelector('[data-action="fill-review"][data-interview-id="iv-1"]') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(el.querySelector('[data-detail-tab="review"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(el.querySelector('[data-detail-panel="review"]')?.hasAttribute("hidden")).toBe(false);
+    // InterviewReview 已选中该面试（状态不再是“请选择面试”）
+    expect(el.querySelector('[data-detail-panel="review"] [data-review-status]')?.textContent).not.toBe("请选择面试");
+  });
+
+  it("interview tab offers a jump to the top-level calendar", async () => {
+    const el = createApplicationDetail(document, baseServices()) as ApplicationDetailElement;
+    document.body.append(el);
+    await el.show("app-1", "interview");
+    expect(el.querySelector('[data-action="open-interview-calendar"]')).toBeTruthy();
   });
 });

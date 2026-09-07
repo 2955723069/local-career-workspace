@@ -120,12 +120,13 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
   await page.getByLabel("新的结束时间").fill(localDateTime(1, 12));
   await page.getByRole("button", { name: "确认改期" }).press("Enter");
   await expect(page.locator(".interview-calendar__status")).toContainText("面试已改期");
-  await page.getByRole("button", { name: "填写或编辑复盘" }).click({ force: true });
-  await page.getByLabel("评分（0 至 5）").fill("4");
-  await page.getByLabel("优势回答").fill("能解释 TypeScript 项目经验");
-  await page.getByLabel("下一步").fill("等待反馈");
-  await page.getByRole("button", { name: "保存复盘" }).press("Enter");
-  await expect(page.locator("[data-review-status]")).toContainText("已复盘");
+  const reviewView = page.locator("#view-interviews");
+  await reviewView.getByRole("button", { name: "填写或编辑复盘" }).click({ force: true });
+  await reviewView.getByLabel("评分（0 至 5）").fill("4");
+  await reviewView.getByLabel("优势回答").fill("能解释 TypeScript 项目经验");
+  await reviewView.getByLabel("下一步").fill("等待反馈");
+  await reviewView.getByRole("button", { name: "保存复盘" }).press("Enter");
+  await expect(reviewView.locator("[data-review-status]")).toContainText("已复盘");
 
   await page.getByRole("tab", { name: "设置与备份" }).click();
 
@@ -174,7 +175,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
     await board.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
     await expect(page.locator(".application-stage-column").last()).toBeVisible();
     await page.getByRole("tab", { name: "面试日历" }).click();
-    await expect(page.locator(".interview-review__actions")).toBeVisible();
+    await expect(page.locator("#view-interviews").locator(".interview-review__actions")).toBeVisible();
     const pageMetrics = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }));
     expect(pageMetrics.scrollWidth).toBeLessThanOrEqual(pageMetrics.clientWidth + 1);
   }
