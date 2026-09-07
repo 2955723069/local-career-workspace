@@ -108,21 +108,25 @@ export function createApplicationBoard(
       <div class="application-form__grid">
         <label for="application-company">公司<input id="application-company" name="company" required /></label>
         <label for="application-position">职位<input id="application-position" name="position" required /></label>
-        <label for="application-job-type-field">职位类型<select id="application-job-type-field" name="jobType">${JOB_TYPES.map((value) => `<option value="${value}">${formatJobType(value)}</option>`).join("")}</select></label>
-        <label for="application-location">地点<input id="application-location" name="location" /></label>
-        <label for="application-work-mode">工作模式<select id="application-work-mode" name="workMode">${WORK_MODES.map((value) => `<option value="${value}">${formatWorkMode(value)}</option>`).join("")}</select></label>
-        <label for="application-salary">薪资<input id="application-salary" name="salaryText" /></label>
-        <label for="application-source">来源<input id="application-source" name="source" /></label>
-        <label for="application-job-url">招聘网址<input id="application-job-url" name="jobUrl" type="url" /></label>
-        <label for="application-deadline">截止时间<input id="application-deadline" name="deadline" type="datetime-local" /></label>
-        <label for="application-contact">联系人<input id="application-contact" name="contact" /></label>
-        <label for="application-priority">优先级<input id="application-priority" name="priority" type="number" min="0" step="1" value="0" /></label>
         <label for="application-stage">阶段<select id="application-stage" name="stageId"></select></label>
         <label for="application-resume">当前简历<select id="application-resume" name="currentResumeId"><option value="">暂不绑定</option></select></label>
       </div>
-      <label for="application-note">职位备注<textarea id="application-note" name="note" rows="2"></textarea></label>
       <label for="application-jd-text">确认 JD 文本<textarea id="application-jd-text" name="jdText" rows="5" placeholder="粘贴职位描述"></textarea></label>
       <label class="application-file-label" for="application-jd-file">上传 JD（PDF/DOCX）<input id="application-jd-file" name="jdFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" /></label>
+      <details class="application-form__more"><summary>更多信息（选填）</summary>
+        <div class="application-form__grid">
+          <label for="application-job-type-field">职位类型<select id="application-job-type-field" name="jobType">${JOB_TYPES.map((value) => `<option value="${value}">${formatJobType(value)}</option>`).join("")}</select></label>
+          <label for="application-location">地点<input id="application-location" name="location" /></label>
+          <label for="application-work-mode">工作模式<select id="application-work-mode" name="workMode">${WORK_MODES.map((value) => `<option value="${value}">${formatWorkMode(value)}</option>`).join("")}</select></label>
+          <label for="application-salary">薪资<input id="application-salary" name="salaryText" /></label>
+          <label for="application-source">来源<input id="application-source" name="source" /></label>
+          <label for="application-job-url">招聘网址<input id="application-job-url" name="jobUrl" type="url" /></label>
+          <label for="application-deadline">截止时间<input id="application-deadline" name="deadline" type="datetime-local" /></label>
+          <label for="application-contact">联系人<input id="application-contact" name="contact" /></label>
+          <label for="application-priority">优先级<input id="application-priority" name="priority" type="number" min="0" step="1" value="0" /></label>
+          <label for="application-note">职位备注<textarea id="application-note" name="note" rows="2"></textarea></label>
+        </div>
+      </details>
       <div class="application-form__actions"><button type="submit" data-submit-application>保存职位</button><button type="button" data-action="confirm-jd" hidden>确认 JD 文本</button></div>
     </form>
     <div class="application-board-view" data-view-panel="board"></div>
@@ -227,6 +231,7 @@ export function createApplicationBoard(
     if (stages[0]) stageSelect.value = stages[0].id;
     const defaultResume = resumes.find((r) => r.isDefault && r.status !== "deleted");
     if (defaultResume) resumeSelect.value = defaultResume.id;
+    form.querySelector(".application-form__more")?.removeAttribute("open");
   }
 
   form.addEventListener("submit", async (event) => {
@@ -313,6 +318,7 @@ export function createApplicationBoard(
         stageSelect.value = item.stageId;
         (form.querySelector("[data-form-title]") as HTMLElement).textContent = "编辑职位";
         (form.querySelector('[data-action="cancel-edit"]') as HTMLButtonElement).hidden = false;
+        form.querySelector(".application-form__more")?.setAttribute("open", "");
         (form.elements.namedItem("jdText") as HTMLTextAreaElement).value = item.jdText;
         form.scrollIntoView({ block: "start" });
         setStatus("已载入职位编辑，尚未保存修改");
