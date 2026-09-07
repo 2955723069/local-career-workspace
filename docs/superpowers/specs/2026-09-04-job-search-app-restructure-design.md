@@ -105,8 +105,8 @@ src/styles/components.css     通用组件类（新增）
 
 1. **地基期**（✅ 已完成，已合并 master）：`appBus` + `router` 抽出 + `createApp` 拆分（抽简历/设置组件、删死代码、统一工厂写法）。用户可见变化最小，纯结构治理。
 2. **枢纽期**（拆为 2a/2b，降低单次改动风险）：
-   - **2a**：抽取内联详情为 `createApplicationDetail` 路由枢纽页 + 子标签（概览 / JD / 简历 / 匹配 / AI / 时间线 / 备注——均为详情现已具备的内容）；顶层从 7 区收敛到 5 区（退役 matching/ai 顶层 tab 与独立组件）。← 体验质变在此发生。
-   - **2b**：把「本职位面试 + 复盘」作为新子标签接入详情页（按 applicationId 过滤 interviewService/reviewService）。
+   - **2a**（✅ 已完成，已合并 master）：抽取内联详情为 `createApplicationDetail` 路由枢纽页 + 子标签（概览 / JD / 简历 / 匹配 / AI / 时间线 / 备注——均为详情现已具备的内容）；顶层从 7 区收敛到 5 区（退役 matching/ai 顶层 tab 与独立组件）。← 体验质变在此发生。
+   - **2b**（✅ 已完成，已合并 master）：把「本职位面试 + 复盘」作为新子标签接入详情页（按 applicationId 过滤 interviewService/reviewService）。
 3. **统一层期**：`format.ts` 本地化 + 按钮层级 + 表单渐进披露 + `components.css`。
 4. **重交互期**：看板拖拽 / 月历网格 / 时区下拉 / 恢复批量。
 
