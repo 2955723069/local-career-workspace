@@ -180,7 +180,7 @@ export function createApplicationBoard(
     const items = visibleApplications();
     board.innerHTML = stages.map((stage) => {
       const cards = items.filter((item) => item.stageId === stage.id).map((item) => `
-        <article class="application-card${item.archivedAt ? " application-card--archived" : ""}" data-application-id="${esc(item.id)}">
+        <article class="application-card${item.archivedAt ? " application-card--archived" : ""}" draggable="true" data-application-id="${esc(item.id)}">
           <h4>${esc(item.company)}${item.archivedAt ? ' <span class="application-card__archived-badge">已归档</span>' : ""}</h4><p>${esc(item.position)}</p>
           <p class="application-card__meta">${esc(item.location)} · ${esc(formatJobType(item.jobType))} · ${esc(formatWorkMode(item.workMode))}</p>
           <p class="application-card__stage" style="--stage-color:${esc(stage.color)}">${esc(stage.name)}</p>
@@ -336,6 +336,48 @@ export function createApplicationBoard(
       if (stageItem && (action === "move-stage-up" || action === "move-stage-down")) { const index = stages.findIndex((stage) => stage.id === stageItem.dataset.stageId); const next = action === "move-stage-up" ? index - 1 : index + 1; if (index >= 0 && next >= 0 && next < stages.length) { const ids = stages.map((stage) => stage.id); [ids[index], ids[next]] = [ids[next], ids[index]]; stages = await stageService.reorderStages(ids); await renderStages(); renderApplications(); setStatus("阶段顺序已保存"); } return; }
       if (stageItem && action === "delete-stage") { const id = stageItem.dataset.stageId!; const preview = await stageService.previewDelete(id); const replacement = stages.find((stage) => stage.id !== id); pendingAction = { type: "stage-delete", id, preview, replacementStageId: replacement?.id }; confirmSummary.textContent = `将删除阶段“${preview.name}”，影响 ${preview.applicationCount} 个职位${replacement ? `，并迁移到“${replacement.name}”` : ""}。`; openConfirm(target); setStatus("已打开阶段删除预览，尚未修改数据"); return; }
     } catch { setStatus("操作失败，请重试"); }
+  });
+
+  let draggingId: string | undefined;
+  board.addEventListener("dragstart", (event) => {
+    const card = (event.target as HTMLElement).closest<HTMLElement>(".application-card");
+    if (!card) return;
+    draggingId = card.dataset.applicationId;
+    (event as DragEvent).dataTransfer?.setData("text/plain", draggingId ?? "");
+    card.classList.add("application-card--dragging");
+  });
+  board.addEventListener("dragend", (event) => {
+    (event.target as HTMLElement).closest(".application-card")?.classList.remove("application-card--dragging");
+    board.querySelectorAll(".application-stage-column--drop-target").forEach((column) => column.classList.remove("application-stage-column--drop-target"));
+    draggingId = undefined;
+  });
+  board.addEventListener("dragover", (event) => {
+    if (!draggingId) return;
+    const column = (event.target as HTMLElement).closest(".application-stage-column");
+    if (!column) return;
+    event.preventDefault();
+    column.classList.add("application-stage-column--drop-target");
+  });
+  board.addEventListener("dragleave", (event) => {
+    const column = (event.target as HTMLElement).closest<HTMLElement>(".application-stage-column");
+    if (column && !column.contains((event as DragEvent).relatedTarget as Node | null)) column.classList.remove("application-stage-column--drop-target");
+  });
+  board.addEventListener("drop", async (event) => {
+    const column = (event.target as HTMLElement).closest<HTMLElement>(".application-stage-column");
+    if (!column || !draggingId) return;
+    event.preventDefault();
+    const targetStageId = column.dataset.stageId;
+    const id = draggingId;
+    draggingId = undefined;
+    column.classList.remove("application-stage-column--drop-target");
+    const item = applications.find((entry) => entry.id === id);
+    if (!item || !targetStageId || item.stageId === targetStageId) return;
+    try {
+      await applicationService.changeStage(id, targetStageId);
+      applications = await applicationService.listApplications();
+      renderApplications();
+      setStatus("已拖动到新阶段");
+    } catch { setStatus("阶段更新失败，请重试"); }
   });
 
   documentRef.defaultView?.addEventListener("app-data-cleared", () => void load(), { signal: options.signal });
