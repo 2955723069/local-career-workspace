@@ -187,7 +187,7 @@ export function createApplicationBoard(
     }).join("");
     list.innerHTML = items.map((item) => {
       const stage = stageById(item.stageId);
-      return `<article class="application-list-row"><div><strong>${esc(item.company)}</strong><span>${esc(item.position)}</span></div><div>${esc(stage?.name ?? "未知阶段")}</div><div>${esc(item.jobType)}</div><div class="application-row-actions"><button type="button" data-action="details" data-application-id="${esc(item.id)}">详情</button><button type="button" data-action="edit" data-application-id="${esc(item.id)}">编辑</button><button type="button" data-action="advance" data-application-id="${esc(item.id)}">推进</button></div></article>`;
+      return `<article class="application-list-row"><div><strong>${esc(item.company)}</strong><span>${esc(item.position)}</span></div><div>${esc(stage?.name ?? "未知阶段")}</div><div>${esc(formatJobType(item.jobType))}</div><div class="application-row-actions"><button type="button" data-action="details" data-application-id="${esc(item.id)}">详情</button><button type="button" data-action="edit" data-application-id="${esc(item.id)}">编辑</button><button type="button" data-action="advance" data-application-id="${esc(item.id)}">推进</button></div></article>`;
     }).join("") || `<p class="application-empty">暂无职位</p>`;
     board.hidden = view !== "board";
     list.hidden = view !== "list";
