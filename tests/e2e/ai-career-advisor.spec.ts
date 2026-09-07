@@ -41,6 +41,8 @@ test("previews, cancels, then confirms an AI advisor request", async ({ page }) 
   await page.reload();
   await page.getByRole("tab", { name: "职位申请" }).click();
   await page.getByRole("button", { name: "查看详情" }).click({ force: true });
+  await expect(page.locator(".application-detail__status")).toContainText("已载入");
+  await page.locator('[data-detail-tab="ai"]').click({ force: true });
   await page.getByLabel("咨询问题").fill("请给出优化建议");
   await page.getByRole("button", { name: "预览并发送" }).click({ force: true });
   await expect(page.getByRole("dialog", { name: "发送前确认" })).toBeVisible();
