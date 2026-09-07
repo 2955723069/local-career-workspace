@@ -185,7 +185,7 @@ export function createApplicationBoard(
           <p class="application-card__meta">${esc(item.location)} · ${esc(formatJobType(item.jobType))} · ${esc(formatWorkMode(item.workMode))}</p>
           <p class="application-card__stage" style="--stage-color:${esc(stage.color)}">${esc(stage.name)}</p>
           <p class="application-card__resume">${item.currentResumeId ? `简历：${esc(resumes.find((resume) => resume.id === item.currentResumeId)?.name ?? item.currentResumeId)}` : "未绑定简历"}</p>
-          <div class="application-card__actions"><button type="button" data-action="details" data-application-id="${esc(item.id)}">查看详情</button><button type="button" data-action="edit" data-application-id="${esc(item.id)}">编辑</button><button type="button" data-action="advance" data-application-id="${esc(item.id)}">推进阶段</button></div>
+          <div class="application-card__actions"><button type="button" data-action="details" data-application-id="${esc(item.id)}">查看详情</button><button type="button" data-action="edit" data-application-id="${esc(item.id)}">编辑</button><button type="button" data-action="advance" data-application-id="${esc(item.id)}">推进阶段</button><label class="application-card__move">移动到<select data-move-to data-application-id="${esc(item.id)}">${stages.map((s) => `<option value="${esc(s.id)}"${s.id === item.stageId ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label></div>
         </article>`).join("");
       return `<section class="application-stage-column" data-stage-id="${esc(stage.id)}"><h3><span style="--stage-color:${esc(stage.color)}">${esc(stage.name)}</span><small>${cards ? cards.match(/class="application-card"/g)?.length ?? 0 : 0}</small></h3>${cards || `<p class="application-empty">暂无职位</p>`}</section>`;
     }).join("");
@@ -377,6 +377,21 @@ export function createApplicationBoard(
       applications = await applicationService.listApplications();
       renderApplications();
       setStatus("已拖动到新阶段");
+    } catch { setStatus("阶段更新失败，请重试"); }
+  });
+
+  board.addEventListener("change", async (event) => {
+    const select = (event.target as HTMLElement).closest<HTMLSelectElement>("select[data-move-to]");
+    if (!select) return;
+    const id = select.dataset.applicationId;
+    const targetStageId = select.value;
+    const item = applications.find((entry) => entry.id === id);
+    if (!id || !item || item.stageId === targetStageId) return;
+    try {
+      await applicationService.changeStage(id, targetStageId);
+      applications = await applicationService.listApplications();
+      renderApplications();
+      setStatus("已移动到新阶段");
     } catch { setStatus("阶段更新失败，请重试"); }
   });
 

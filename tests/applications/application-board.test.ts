@@ -171,4 +171,18 @@ describe("application board UI", () => {
     await flush();
     expect(deps.applicationService.changeStage).not.toHaveBeenCalled();
   });
+
+  it("moves a card's stage via the keyboard-accessible move-to select", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const deps = services();
+    const root = createApp(document, deps);
+    await flush();
+    const select = root.querySelector<HTMLSelectElement>('.application-card[data-application-id="application-1"] select[data-move-to]')!;
+    expect(select).toBeTruthy();
+    expect(select.value).toBe("stage-a"); // 默认选中当前阶段
+    select.value = "stage-offer";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(deps.applicationService.changeStage).toHaveBeenCalledWith("application-1", "stage-offer");
+  });
 });
