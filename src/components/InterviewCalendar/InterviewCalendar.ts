@@ -57,6 +57,23 @@ function inRange(interview: Interview, anchor: string, view: "day" | "week" | "m
   const candidate = new Date(`${date}T00:00:00Z`); return candidate >= start && candidate < end;
 }
 
+const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
+
+/** 返回覆盖某月的 6×7=42 个日期（"YYYY-MM-DD"），周一起始；用 UTC 推进避免时区漂移。 */
+function monthGridCells(month: string): string[] {
+  const first = new Date(`${month}-01T00:00:00Z`);
+  const weekday = (first.getUTCDay() + 6) % 7; // 周一=0
+  const start = new Date(first);
+  start.setUTCDate(start.getUTCDate() - weekday);
+  const cells: string[] = [];
+  for (let index = 0; index < 42; index += 1) {
+    const day = new Date(start);
+    day.setUTCDate(start.getUTCDate() + index);
+    cells.push(day.toISOString().slice(0, 10));
+  }
+  return cells;
+}
+
 function notificationMessage(): string {
   if (typeof Notification === "undefined") return "浏览器通知不可用或浏览器已关闭；应用内提醒和 ICS 导出仍可用。";
   if (Notification.permission === "denied") return "浏览器通知已被拒绝；应用内提醒和 ICS 导出仍可用。";
@@ -87,15 +104,45 @@ export function createInterviewCalendar(documentRef: Document, options: Intervie
   }
   if (typeof form.scrollIntoView !== "function") form.scrollIntoView = () => undefined;
   let records: Interview[] = []; let applications: Application[] = []; let view: "day" | "week" | "month" = "day"; let editingId: string | undefined; let reschedulingId: string | undefined; const failures: string[] = [];
+  let selectedDay = anchor.value;
   const applicationFor = (id: string) => applications.find((application) => application.id === id);
+  const renderInterviewItem = (item: Interview): string => {
+    const application = applicationFor(item.applicationId);
+    const reminders = item.reminders.map((reminder) => `${reminder.offsetMinutes} 分钟前 / ${reminder.channel === "browser" ? "浏览器" : "应用内"}`).join("；");
+    return `<article class="interview-item" data-interview-id="${escapeHtml(item.id)}"><div class="interview-item__body"><h3>${escapeHtml(item.title || `第 ${item.round} 轮面试`)}</h3><p>${escapeHtml(application?.company ?? "未知公司")} · ${escapeHtml(application?.position ?? "未知职位")} · 第 ${item.round} 轮</p><p>${escapeHtml(formatInterviewLocalTime(item.startsAt, item.timezone))} · ${escapeHtml(item.timezone)}</p><p>状态：${escapeHtml(formatInterviewStatus(item.status))} · 提醒：${escapeHtml(reminders || "无")}</p><p>${escapeHtml(item.locationOrLink)}${item.interviewer ? ` · 面试官：${escapeHtml(item.interviewer)}` : ""}</p></div><div class="interview-item__actions"><button type="button" data-action="edit" data-interview-id="${escapeHtml(item.id)}">编辑</button><button type="button" data-action="reschedule" data-interview-id="${escapeHtml(item.id)}">改期</button><button type="button" data-action="cancel" data-interview-id="${escapeHtml(item.id)}">取消</button><button type="button" data-action="complete" data-interview-id="${escapeHtml(item.id)}">完成</button><button type="button" data-action="review" data-interview-id="${escapeHtml(item.id)}">填写或编辑复盘</button><button type="button" data-action="export-ics" data-interview-id="${escapeHtml(item.id)}">导出 ICS</button></div></article>`;
+  };
   const render = () => {
-    const visible = records.filter((item) => inRange(item, anchor.value, view));
-    list.innerHTML = visible.map((item) => { const application = applicationFor(item.applicationId); const reminders = item.reminders.map((reminder) => `${reminder.offsetMinutes} 分钟前 / ${reminder.channel === "browser" ? "浏览器" : "应用内"}`).join("；"); return `<article class="interview-item" data-interview-id="${escapeHtml(item.id)}"><div class="interview-item__body"><h3>${escapeHtml(item.title || `第 ${item.round} 轮面试`)}</h3><p>${escapeHtml(application?.company ?? "未知公司")} · ${escapeHtml(application?.position ?? "未知职位")} · 第 ${item.round} 轮</p><p>${escapeHtml(formatInterviewLocalTime(item.startsAt, item.timezone))} · ${escapeHtml(item.timezone)}</p><p>状态：${escapeHtml(formatInterviewStatus(item.status))} · 提醒：${escapeHtml(reminders || "无")}</p><p>${escapeHtml(item.locationOrLink)}${item.interviewer ? ` · 面试官：${escapeHtml(item.interviewer)}` : ""}</p></div><div class="interview-item__actions"><button type="button" data-action="edit" data-interview-id="${escapeHtml(item.id)}">编辑</button><button type="button" data-action="reschedule" data-interview-id="${escapeHtml(item.id)}">改期</button><button type="button" data-action="cancel" data-interview-id="${escapeHtml(item.id)}">取消</button><button type="button" data-action="complete" data-interview-id="${escapeHtml(item.id)}">完成</button><button type="button" data-action="review" data-interview-id="${escapeHtml(item.id)}">填写或编辑复盘</button><button type="button" data-action="export-ics" data-interview-id="${escapeHtml(item.id)}">导出 ICS</button></div></article>`; }).join("") || `<p class="interview-empty">当前范围没有面试安排</p>`;
+    let visibleCount: number;
+    if (view === "month") {
+      const month = anchor.value.slice(0, 7);
+      const countByDay = new Map<string, number>();
+      for (const item of records) {
+        const day = isoToLocalInput(item.startsAt, item.timezone).slice(0, 10);
+        countByDay.set(day, (countByDay.get(day) ?? 0) + 1);
+      }
+      const cellsHtml = monthGridCells(month).map((dateStr) => {
+        const dayNum = Number(dateStr.slice(8, 10));
+        const count = countByDay.get(dateStr) ?? 0;
+        const classes = ["calendar-cell"];
+        if (dateStr.slice(0, 7) !== month) classes.push("calendar-cell--outside");
+        if (dateStr === today) classes.push("calendar-cell--today");
+        if (dateStr === selectedDay) classes.push("calendar-cell--selected");
+        const label = count ? `${dayNum} 日，${count} 场面试` : `${dayNum} 日`;
+        return `<button type="button" role="gridcell" class="${classes.join(" ")}" data-calendar-day="${dateStr}" aria-pressed="${dateStr === selectedDay}" aria-label="${label}"><span class="calendar-cell__date">${dayNum}</span>${count ? `<span class="calendar-cell__count" aria-hidden="true">●${count}</span>` : ""}</button>`;
+      }).join("");
+      const dayInterviews = records.filter((item) => isoToLocalInput(item.startsAt, item.timezone).slice(0, 10) === selectedDay);
+      list.innerHTML = `<div class="calendar-grid" role="grid" aria-label="${escapeHtml(month)} 月历"><div class="calendar-grid__weekdays" role="row">${WEEKDAY_LABELS.map((weekday) => `<span role="columnheader">${weekday}</span>`).join("")}</div><div class="calendar-grid__cells">${cellsHtml}</div></div><div class="calendar-day-detail"><h3>${escapeHtml(selectedDay)} 的面试</h3>${dayInterviews.map(renderInterviewItem).join("") || `<p class="interview-empty">当天没有面试安排</p>`}</div>`;
+      visibleCount = records.filter((item) => inRange(item, anchor.value, "month")).length;
+    } else {
+      const visible = records.filter((item) => inRange(item, anchor.value, view));
+      list.innerHTML = visible.map(renderInterviewItem).join("") || `<p class="interview-empty">当前范围没有面试安排</p>`;
+      visibleCount = visible.length;
+    }
     root.querySelectorAll<HTMLButtonElement>("[data-calendar-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.calendarView === view)));
     const reminders = records.flatMap((interview) => interview.reminders.filter((item) => item.channel === "in-app").map((item) => ({ interview, item })));
     root.querySelector(".in-app-reminders ul")!.innerHTML = reminders.map(({ interview, item }) => `<li>${escapeHtml(interview.title)}：${escapeHtml(formatReminderLocalTime(interview.startsAt, interview.timezone, item))}（${escapeHtml(interview.timezone)}）</li>`).join("") || "<li>暂无应用内提醒</li>";
     root.querySelector(".notification-failures")!.innerHTML = failures.map(() => "<li>浏览器通知失败；已转为应用内提醒。</li>").join("");
-    status.textContent = `${visible.length} 场面试 · ${view === "day" ? "日" : view === "week" ? "周" : "月"}视图${failures.length ? ` · ${failures.length} 个通知失败，已保留应用内提醒` : ""}`;
+    status.textContent = `${visibleCount} 场面试 · ${view === "day" ? "日" : view === "week" ? "周" : "月"}视图${failures.length ? ` · ${failures.length} 个通知失败，已保留应用内提醒` : ""}`;
   };
   const refresh = async () => { records = await service.listInterviews(); render(); };
   const load = async () => { try { applications = options.applications ? await options.applications() : []; appSelect.innerHTML = applications.map((application) => `<option value="${escapeHtml(application.id)}">${escapeHtml(application.company)} · ${escapeHtml(application.position)}</option>`).join(""); await refresh(); if (records.length && !records.some((item) => inRange(item, anchor.value, "day"))) { const nearest = records.reduce((candidate, item) => Math.abs(Date.parse(item.startsAt) - now.getTime()) < Math.abs(Date.parse(candidate.startsAt) - now.getTime()) ? item : candidate); anchor.value = isoToLocalInput(nearest.startsAt, nearest.timezone).slice(0, 10); render(); } if (records[0]) root.dispatchEvent(new CustomEvent("interview-selected", { detail: records[0].id })); } catch { status.textContent = "面试读取失败，可重试"; } };
@@ -143,12 +190,18 @@ export function createInterviewCalendar(documentRef: Document, options: Intervie
     }
   });
   rescheduleForm.addEventListener("submit", async (event) => { event.preventDefault(); if (!reschedulingId) return; status.textContent = "正在保存改期..."; try { const data = new FormData(rescheduleForm); const timezone = String(data.get("timezone")); const id = reschedulingId; const updated = await service.rescheduleInterview(id, { startsAt: zonedLocalToIso(String(data.get("startsAt")), timezone), endsAt: data.get("endsAt") ? zonedLocalToIso(String(data.get("endsAt")), timezone) : undefined, timezone }); options.notificationService?.clearInterview?.(id); for (const reminder of updated.reminders) await options.notificationService?.schedule(updated, reminder); rescheduleForm.hidden = true; reschedulingId = undefined; await refresh(); status.textContent = "面试已改期，旧时间已保留在职位时间线；提醒时间已重新计算"; root.dispatchEvent(new CustomEvent("interview-updated", { detail: id, bubbles: true })); } catch { status.textContent = "改期失败，原时间未改变；可重试"; } });
-  root.querySelectorAll<HTMLButtonElement>("[data-calendar-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.calendarView as typeof view; render(); }));
-  anchor.addEventListener("change", render);
+  root.querySelectorAll<HTMLButtonElement>("[data-calendar-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.calendarView as typeof view; if (view === "month") selectedDay = anchor.value; render(); }));
+  anchor.addEventListener("change", () => { if (view === "month") selectedDay = anchor.value; render(); });
   root.querySelector('[data-action="request-notifications"]')?.addEventListener("click", async () => { const notice = root.querySelector<HTMLElement>(".notification-fallback p")!; if (typeof Notification === "undefined") { notice.textContent = notificationMessage(); return; } try { await Notification.requestPermission(); notice.textContent = notificationMessage(); } catch { notice.textContent = "通知授权失败；应用内提醒和 ICS 导出仍可用。"; } });
   root.querySelector('[data-action="cancel-edit"]')?.addEventListener("click", resetForm);
   root.querySelector('[data-action="cancel-reschedule"]')?.addEventListener("click", () => { rescheduleForm.hidden = true; reschedulingId = undefined; status.textContent = "已取消改期，面试时间未改变"; });
   list.addEventListener("click", async (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]"); const id = button?.dataset.interviewId; if (!button || !id) return; const interview = records.find((item) => item.id === id); if (!interview) return; try { if (button.dataset.action === "cancel") { const confirmFn = documentRef.defaultView?.confirm; if (confirmFn && !confirmFn.call(documentRef.defaultView, `确定取消“${interview.title || `第 ${interview.round} 轮面试`}”吗？此操作会记入时间线且不可撤销。`)) { status.textContent = "已保留该面试，未做修改"; return; } await service.cancelInterview(id); options.notificationService?.clearInterview?.(id); } else if (button.dataset.action === "complete") { await service.completeInterview(id); options.notificationService?.clearInterview?.(id); } else if (button.dataset.action === "review") { root.dispatchEvent(new CustomEvent("interview-selected", { detail: id })); status.textContent = "已打开该面试的复盘"; return; } else if (button.dataset.action === "reschedule") { reschedulingId = id; (rescheduleForm.elements.namedItem("startsAt") as HTMLInputElement).value = isoToLocalInput(interview.startsAt, interview.timezone); (rescheduleForm.elements.namedItem("endsAt") as HTMLInputElement).value = interview.endsAt ? isoToLocalInput(interview.endsAt, interview.timezone) : ""; (rescheduleForm.elements.namedItem("timezone") as HTMLInputElement).value = interview.timezone; rescheduleForm.hidden = false; (rescheduleForm.elements.namedItem("startsAt") as HTMLInputElement).focus(); status.textContent = "已打开改期表单，尚未修改时间"; return; } else if (button.dataset.action === "edit") { editingId = id; for (const [name, value] of Object.entries({ applicationId: interview.applicationId, round: interview.round, title: interview.title, type: interview.type, startsAt: isoToLocalInput(interview.startsAt, interview.timezone), endsAt: interview.endsAt ? isoToLocalInput(interview.endsAt, interview.timezone) : "", timezone: interview.timezone, locationOrLink: interview.locationOrLink, interviewer: interview.interviewer, note: interview.note })) { const control = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null; if (control) control.value = String(value); } const reminder = interview.reminders[0]; const preset = form.elements.namedItem("reminderPreset") as HTMLSelectElement; const custom = form.elements.namedItem("customReminder") as HTMLInputElement; preset.value = reminder && [10, 30, 60, 1440].includes(reminder.offsetMinutes) ? String(reminder.offsetMinutes) : "custom"; custom.value = String(reminder?.offsetMinutes ?? 30); (form.elements.namedItem("inAppReminder") as HTMLInputElement).checked = interview.reminders.some((item) => item.channel === "in-app"); (form.elements.namedItem("browserReminder") as HTMLInputElement).checked = interview.reminders.some((item) => item.channel === "browser"); (form.querySelector("[data-form-title]") as HTMLElement).textContent = "编辑面试"; (form.querySelector('[data-action="cancel-edit"]') as HTMLButtonElement).hidden = false; form.scrollIntoView({ block: "start" }); status.textContent = "已载入面试编辑，尚未保存"; return; } else if (button.dataset.action === "export-ics") { if (!options.exportInterviewICS) throw new Error("当前无法导出 ICS"); const ics = await options.exportInterviewICS(id); const anchorElement = documentRef.createElement("a"); anchorElement.download = `${interview.title || "interview"}.ics`; anchorElement.href = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`; documentRef.body.append(anchorElement); anchorElement.click(); anchorElement.remove(); status.textContent = "ICS 已准备下载"; return; } await refresh(); status.textContent = button.dataset.action === "cancel" ? "面试已取消" : "面试已完成"; root.dispatchEvent(new CustomEvent("interview-updated", { detail: id, bubbles: true })); } catch { status.textContent = "操作失败，资料未改变；可重试"; } });
+  list.addEventListener("click", (event) => {
+    const cell = (event.target as HTMLElement).closest<HTMLElement>("[data-calendar-day]");
+    if (!cell) return;
+    selectedDay = cell.dataset.calendarDay!;
+    render();
+  });
   documentRef.defaultView?.addEventListener("app-data-cleared", () => void load(), { signal: options.signal });
   void load(); return root;
 }
