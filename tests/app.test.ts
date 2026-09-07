@@ -30,7 +30,7 @@ describe("application startup", () => {
 
     const root = createApp(document);
 
-    expect(root.querySelectorAll(".app-nav__tab")).toHaveLength(7);
+    expect(root.querySelectorAll(".app-nav__tab")).toHaveLength(5);
     expect(root.querySelector<HTMLButtonElement>('[data-view="overview"]')?.getAttribute("aria-selected")).toBe("true");
     expect(root.querySelector<HTMLElement>('[data-view-panel="overview"]')?.hidden).toBe(false);
     expect(root.querySelector<HTMLElement>('[data-view-panel="applications"]')?.hidden).toBe(true);

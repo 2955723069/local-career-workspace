@@ -8,8 +8,6 @@ import { createDashboard } from "../components/Dashboard/Dashboard";
 import type { DashboardService } from "../features/dashboard/dashboardService";
 import type { BackupPanelService } from "../features/backup/BackupPanel";
 import type { AiAdvisorService } from "../features/ai/aiAdvisorService";
-import { createMatchingPage } from "../components/MatchingPage/MatchingPage";
-import { createAiPage } from "../components/AiPage/AiPage";
 import { createResumeLibrary } from "../components/ResumeLibrary/ResumeLibrary";
 import { createSettingsPage } from "../components/SettingsPage/SettingsPage";
 import { createAppBus } from "./appBus";
@@ -72,8 +70,6 @@ export function createApp(
         <button class="app-nav__tab" type="button" role="tab" data-view="resumes" aria-controls="view-resumes" aria-selected="false">简历库</button>
         <button class="app-nav__tab" type="button" role="tab" data-view="applications" aria-controls="view-applications" aria-selected="false">职位申请</button>
         <button class="app-nav__tab" type="button" role="tab" data-view="interviews" aria-controls="view-interviews" aria-selected="false">面试日历</button>
-        <button class="app-nav__tab" type="button" role="tab" data-view="matching" aria-controls="view-matching" aria-selected="false">JD 匹配</button>
-        <button class="app-nav__tab" type="button" role="tab" data-view="ai" aria-controls="view-ai" aria-selected="false">AI 顾问</button>
         <button class="app-nav__tab" type="button" role="tab" data-view="settings" aria-controls="view-settings" aria-selected="false">设置与备份</button>
       </nav>
 
@@ -104,12 +100,6 @@ export function createApp(
         <section id="view-interviews" class="app-view" data-view-panel="interviews" role="tabpanel" aria-labelledby="interview-calendar-title" hidden>
           <div class="interview-calendar-mount"></div>
           <div class="interview-review-mount"></div>
-        </section>
-        <section id="view-matching" class="app-view" data-view-panel="matching" role="tabpanel" aria-labelledby="matching-page-title" hidden>
-          <div class="matching-page-mount"></div>
-        </section>
-        <section id="view-ai" class="app-view" data-view-panel="ai" role="tabpanel" aria-labelledby="ai-page-title" hidden>
-          <div class="ai-page-mount"></div>
         </section>
         <section id="view-settings" class="app-view" data-view-panel="settings" role="tabpanel" aria-labelledby="backup-page-title" hidden>
           <div class="settings-page-mount"></div>
@@ -192,26 +182,6 @@ export function createApp(
   });
   bus.on("review-saved", () => dashboard?.dispatchEvent(new Event("review-saved")));
 
-  const matchingMount = root.querySelector<HTMLElement>(".matching-page-mount");
-  if (matchingMount) matchingMount.replaceWith(createMatchingPage(documentRef, {
-    applicationService: options.applicationService,
-    resumeLibrary: options.resumeLibrary,
-    matchingService: options.matchingService,
-    onOpenAi: (applicationId) => bus.emit("app-navigate", { name: "ai", applicationId }),
-    signal,
-  }));
-  const aiMount = root.querySelector<HTMLElement>(".ai-page-mount");
-  let aiPage: HTMLElement | undefined;
-  if (aiMount) {
-    aiPage = createAiPage(documentRef, {
-    applicationService: options.applicationService,
-    aiAdvisorService: options.aiAdvisorService,
-    onOpenSettings: () => bus.emit("app-navigate", { name: "settings" }),
-    signal,
-    });
-    aiMount.replaceWith(aiPage);
-  }
-
   const settingsMount = root.querySelector<HTMLElement>(".settings-page-mount");
   if (settingsMount) {
     settingsMount.replaceWith(createSettingsPage(documentRef, {
@@ -219,7 +189,6 @@ export function createApp(
       backupService: options.backupService,
       bus,
       onAiSettingsChanged: (service) => {
-        aiPage?.dispatchEvent(new CustomEvent("ai-service-changed", { detail: service }));
         options.onAiSettingsChanged?.(service);
       },
       signal,

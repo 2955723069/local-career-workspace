@@ -1,6 +1,6 @@
 import type { AppBus } from "./appBus";
 
-export const APP_VIEWS = ["overview", "resumes", "applications", "interviews", "matching", "ai", "settings"] as const;
+export const APP_VIEWS = ["overview", "resumes", "applications", "interviews", "settings"] as const;
 export type AppView = (typeof APP_VIEWS)[number];
 
 export function isAppView(name: string): name is AppView {
