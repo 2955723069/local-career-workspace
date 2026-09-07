@@ -502,11 +502,3 @@
   border-bottom: 1px solid var(--line);
 }
 
-.detail-interview-status {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: var(--fs-xs);
-  border-radius: var(--r-pill);
-  background: var(--accent-weak);
-  color: var(--accent-text);
-}

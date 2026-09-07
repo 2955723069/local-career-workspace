@@ -171,6 +171,17 @@ button[data-variant="secondary"]:hover {
   border-color: var(--accent-weak-border);
 }
 
+button[data-variant="danger"] {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+button[data-variant="danger"]:hover {
+  background: var(--danger-strong);
+  border-color: var(--danger-strong);
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;

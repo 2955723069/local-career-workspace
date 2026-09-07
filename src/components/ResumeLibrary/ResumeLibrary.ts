@@ -173,7 +173,7 @@ export function createResumeLibrary(
               ${resume.status !== "deleted" ? (resume.isDefault ? `<button type="button" data-action="unset-default" data-resume-id="${resume.id}">取消通用</button>` : `<button type="button" data-action="set-default" data-resume-id="${resume.id}">设为通用</button>`) : ""}
               <button type="button" data-action="export" data-resume-id="${resume.id}">导出文本</button>
               <button type="button" data-action="download" data-resume-id="${resume.id}">下载原文件</button>
-              <button type="button" data-action="delete" data-resume-id="${resume.id}">删除</button>
+              <button type="button" data-action="delete" data-variant="danger" data-resume-id="${resume.id}">删除</button>
             </div>
           </article>
         `).join("")
