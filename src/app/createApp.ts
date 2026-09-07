@@ -1,5 +1,6 @@
 import type { ResumeIngestionService } from "../features/resumes/ingestion";
 import { createApplicationBoard } from "../components/ApplicationBoard/ApplicationBoard";
+import { createApplicationDetail, type ApplicationDetailElement } from "../components/ApplicationDetail/ApplicationDetail";
 import { createInterviewCalendar } from "../components/InterviewCalendar/InterviewCalendar";
 import { createInterviewReview } from "../components/InterviewReview/InterviewReview";
 import type { MatchingService } from "../features/matching/matchingService";
@@ -96,6 +97,7 @@ export function createApp(
         </section>
         <section id="view-applications" class="app-view" data-view-panel="applications" role="tabpanel" aria-labelledby="application-board-title" hidden>
           <div class="application-board-mount"></div>
+          <div class="application-detail-mount"></div>
         </section>
         <section id="view-interviews" class="app-view" data-view-panel="interviews" role="tabpanel" aria-labelledby="interview-calendar-title" hidden>
           <div class="interview-calendar-mount"></div>
@@ -117,9 +119,37 @@ export function createApp(
       resumeLibrary: options.resumeLibrary,
       matchingService: options.matchingService,
       aiAdvisorService: options.aiAdvisorService,
+      bus,
       signal,
     }));
   }
+
+  const detailMount = root.querySelector<HTMLElement>(".application-detail-mount");
+  let applicationDetail: ApplicationDetailElement | undefined;
+  if (detailMount) {
+    applicationDetail = createApplicationDetail(documentRef, {
+      applicationService: options.applicationService as NonNullable<typeof options.applicationService>,
+      stageService: options.stageService as NonNullable<typeof options.stageService>,
+      jobDescriptionService: options.jobDescriptionService,
+      resumeLibrary: options.resumeLibrary,
+      matchingService: options.matchingService,
+      aiAdvisorService: options.aiAdvisorService,
+      bus,
+      signal,
+    }) as ApplicationDetailElement;
+    detailMount.replaceWith(applicationDetail);
+    applicationDetail.setAttribute("hidden", "");
+  }
+
+  const boardEl = () => root.querySelector<HTMLElement>(".application-board");
+  const showBoard = () => { boardEl()?.removeAttribute("hidden"); applicationDetail?.setAttribute("hidden", ""); };
+  const showDetailView = () => { boardEl()?.setAttribute("hidden", ""); applicationDetail?.removeAttribute("hidden"); };
+  showBoard();
+  bus.on("application-selected", ({ applicationId, tab }) => {
+    showDetailView();
+    void applicationDetail?.show(applicationId, tab as never);
+  });
+  bus.on("application-list", () => showBoard());
 
   const dashboardMount = root.querySelector<HTMLElement>(".dashboard-mount");
   let dashboard: HTMLElement | undefined;

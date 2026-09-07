@@ -1,7 +1,7 @@
 import type { ResumeLibraryService } from "../../features/resumes/resumeLibrary";
 import type { AnalysisResult, Application, Resume, Stage } from "../../db/types";
-import { exportAdvisorReport, parseAiAdvisorResult, type AiAdvisorResult, type AiAdvisorService } from "../../features/ai/aiAdvisorService";
-import { createSendPreview, type SendPreviewElement } from "../SendPreview/SendPreview";
+import type { AiAdvisorService } from "../../features/ai/aiAdvisorService";
+import type { AppBus } from "../../app/appBus";
 
 export interface ApplicationBoardOptions {
   applicationService?: {
@@ -39,6 +39,7 @@ export interface ApplicationBoardOptions {
     get(id: string): Promise<AnalysisResult | undefined>;
   };
   aiAdvisorService?: Pick<AiAdvisorService, "createPreview" | "send" | "getConversation">;
+  bus?: AppBus;
   signal?: AbortSignal;
 }
 
@@ -46,16 +47,6 @@ type ActionPreview = { id: string; company?: string; position?: string; name?: s
 
 const JOB_TYPES = ["graduate", "internship", "tech", "general", "other"] as const;
 const WORK_MODES = ["onsite", "remote", "hybrid", "unknown"] as const;
-
-/** 只允许 http/https 作为职位网址链接，拦截 javascript: 等危险协议。非法时返回空串。 */
-function safeHref(value: string): string {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
-  } catch {
-    return "";
-  }
-}
 
 /** 把存储的绝对 ISO 时间转成 datetime-local 需要的本地墙钟字符串，与保存时的 new Date(local).toISOString() 对称，避免每次编辑漂移一个时区偏移。 */
 function isoToLocalDatetimeInput(iso: string): string {
@@ -139,10 +130,6 @@ export function createApplicationBoard(
       <div class="section-heading"><h3 id="stage-manager-title">阶段管理</h3><span class="stage-outcome-counts" role="status"></span></div>
       <div class="stage-manager__list"></div>
     </section>
-    <section class="application-detail" aria-labelledby="application-detail-title" hidden>
-      <div class="section-heading"><h3 id="application-detail-title">职位详情</h3><button type="button" data-action="close-detail">关闭</button></div>
-      <div class="application-detail__content"></div>
-    </section>
     <div class="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-confirm-title" hidden>
       <h3 id="application-confirm-title">确认操作</h3><p data-confirm-summary></p>
       <div><button type="button" data-action="confirm-application-action">确认</button><button type="button" data-action="cancel-application-action">取消</button></div>
@@ -153,12 +140,8 @@ export function createApplicationBoard(
   const board = root.querySelector<HTMLElement>('[data-view-panel="board"]')!;
   const list = root.querySelector<HTMLElement>('[data-view-panel="list"]')!;
   const form = root.querySelector<HTMLFormElement>('form[data-form="application"]')!;
-  const detail = root.querySelector<HTMLElement>(".application-detail")!;
-  const detailContent = root.querySelector<HTMLElement>(".application-detail__content")!;
   const confirmDialog = root.querySelector<HTMLElement>(".application-confirm")!;
   const confirmSummary = root.querySelector<HTMLElement>("[data-confirm-summary]")!;
-  let activeAdvisorResult: AiAdvisorResult | undefined;
-  let advisorPreview: SendPreviewElement | undefined;
   const stageSelect = form.elements.namedItem("stageId") as HTMLSelectElement;
   const resumeSelect = form.elements.namedItem("currentResumeId") as HTMLSelectElement;
   let applications: Application[] = [];
@@ -168,29 +151,9 @@ export function createApplicationBoard(
   let filter = "";
   let showArchived = false;
   let editingId: string | undefined;
-  let detailId: string | undefined;
-  let pendingAction: { type: "archive" | "delete" | "stage-delete"; id: string; preview: ActionPreview; replacementStageId?: string } | undefined;
+  let pendingAction: { type: "stage-delete"; id: string; preview: ActionPreview; replacementStageId?: string } | undefined;
   let pendingJobDescriptionId: string | undefined;
   let confirmReturnFocus: HTMLElement | undefined;
-
-  if (options.aiAdvisorService) {
-    const previewElement = createSendPreview(documentRef, {
-      onConfirm: async (preview) => {
-        if (!options.aiAdvisorService) return;
-        try {
-          const response = await options.aiAdvisorService.send(preview.applicationId, preview.prompt);
-          activeAdvisorResult = response.result;
-          await showDetail(preview.applicationId);
-          setStatus("AI 建议已保存");
-        } catch (error) {
-          setStatus("AI 发送失败，资料未改变；可重新打开预览重试");
-          throw error instanceof Error ? error : new Error("AI send failed");
-        }
-      },
-    });
-    advisorPreview = previewElement;
-    root.append(previewElement);
-  }
 
   const esc = (value: unknown): string => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char] ?? char));
   const visibleApplications = () => applications.filter((item) => (showArchived || !item.archivedAt) && (!filter || item.jobType === filter));
@@ -265,22 +228,6 @@ export function createApplicationBoard(
     if (defaultResume) resumeSelect.value = defaultResume.id;
   }
 
-  async function showDetail(id: string): Promise<void> {
-    const item = applications.find((entry) => entry.id === id);
-    if (!item) return;
-    detailId = id;
-    const [timeline, history, analysisHistory, conversation] = await Promise.all([applicationService.listTimeline(id), applicationService.listResumeUsageHistory(id), options.matchingService?.listHistory(id) ?? Promise.resolve([]), options.aiAdvisorService?.getConversation(id) ?? Promise.resolve(undefined)]);
-    const latestAssistant = conversation?.messages.slice().reverse().find((message) => message.role === "assistant");
-    activeAdvisorResult = undefined;
-    if (latestAssistant) { try { activeAdvisorResult = parseAiAdvisorResult(latestAssistant.content); } catch { activeAdvisorResult = undefined; } }
-    const renderResult = (result: AnalysisResult) => `<article class="matching-result" data-analysis-result-id="${esc(result.id)}"><p class="matching-result__meta">${esc(result.createdAt)} · ${esc(resumes.find((resume) => resume.id === result.resumeId)?.name ?? result.resumeId)}</p><dl class="matching-coverage"><div><dt>总体覆盖率</dt><dd>${result.coverage.overall}%</dd></div><div><dt>必需覆盖率</dt><dd>${result.coverage.required}%</dd></div><div><dt>加分覆盖率</dt><dd>${result.coverage.preferred}%</dd></div></dl><div class="matching-lists"><div><h5>明确匹配</h5><ul>${result.matchedKeywords.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>弱匹配</h5><ul>${result.weakMatches.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>缺失</h5><ul>${result.missingKeywords.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>待人工确认</h5><ul>${result.uncertainItems.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div></div><h5>证据片段</h5><ul class="matching-evidence">${result.evidence.map((entry) => `<li><strong>${esc(entry.keyword)}</strong>：${esc(entry.excerpt)}</li>`).join("") || "<li>暂无证据</li>"}</ul><p class="matching-disclaimer">仅代表文本证据，不代表用户真实具备相关能力。</p></article>`;
-    const aiSection = options.aiAdvisorService ? `<section class="ai-advisor-panel" aria-labelledby="ai-advisor-title"><h4 id="ai-advisor-title">AI 顾问</h4><form data-ai-form><label for="ai-prompt">咨询问题<textarea id="ai-prompt" name="prompt" rows="3" required placeholder="例如：如何突出与职位相关的项目？"></textarea></label><button type="submit" data-action="open-ai-preview">预览并发送</button></form><p class="ai-status" role="status" aria-live="polite"></p>${activeAdvisorResult ? renderAiResult(activeAdvisorResult) : ""}<div class="ai-conversation">${(conversation?.messages ?? []).filter((message) => message.role !== "system").map((message) => `<article data-message-id="${esc(message.id)}"><p><strong>${message.role === "user" ? "我" : "AI"}</strong></p><p class="ai-message-content">${esc(message.content)}</p><button type="button" data-action="copy-ai-message" data-message="${esc(message.content)}">复制此段</button></article>`).join("")}</div>${conversation?.messages.length ? `<button type="button" data-action="copy-ai-all">复制全部</button><button type="button" data-action="export-ai-report">导出优化报告</button>` : ""}</section>` : "";
-    detailContent.innerHTML = `<dl class="application-detail__facts"><dt>公司</dt><dd>${esc(item.company)}</dd><dt>职位</dt><dd>${esc(item.position)}</dd><dt>阶段</dt><dd>${esc(stageById(item.stageId)?.name ?? "")}</dd><dt>网址</dt><dd>${item.jobUrl && safeHref(item.jobUrl) ? `<a href="${esc(safeHref(item.jobUrl))}" target="_blank" rel="noreferrer">${esc(item.jobUrl)}</a>` : item.jobUrl ? esc(item.jobUrl) : "未填写"}</dd><dt>JD</dt><dd class="application-long-text">${esc(item.jdText || "未确认 JD")}</dd></dl><div class="application-detail__actions"><label>推进阶段<select data-detail-stage>${stages.map((stage) => `<option value="${esc(stage.id)}" ${stage.id === item.stageId ? "selected" : ""}>${esc(stage.name)}</option>`).join("")}</select></label><button type="button" data-action="save-detail-stage">保存阶段</button><label>切换当前简历<select data-detail-resume><option value="">未绑定</option>${resumes.filter((resume) => resume.status !== "deleted").map((resume) => `<option value="${esc(resume.id)}" ${resume.id === item.currentResumeId ? "selected" : ""}>${esc(resume.name)}</option>`).join("")}</select></label><button type="button" data-action="save-detail-resume">保存简历</button><label>添加备注<textarea data-detail-note rows="2">${esc(item.note)}</textarea></label><button type="button" data-action="save-detail-note">保存备注</button><button type="button" data-action="archive" data-application-id="${esc(id)}">归档</button><button type="button" data-action="delete" data-application-id="${esc(id)}">删除职位</button></div><section class="matching-panel" aria-labelledby="matching-panel-title"><h4 id="matching-panel-title">本地 JD 匹配</h4>${options.matchingService ? `<div class="matching-run-controls"><label>用于匹配的简历<select data-matching-resume>${resumes.filter((resume) => resume.status !== "deleted").map((resume) => `<option value="${esc(resume.id)}" ${resume.id === item.currentResumeId ? "selected" : ""}>${esc(resume.name)}</option>`).join("")}</select></label><button type="button" data-action="run-matching" data-application-id="${esc(id)}">运行匹配</button></div>` : ""}<p class="matching-status" role="status" aria-live="polite"></p><div class="matching-history">${analysisHistory.length ? analysisHistory.map((result) => `<button type="button" class="matching-history__item" data-action="open-analysis" data-analysis-id="${esc(result.id)}">${esc(result.createdAt)} · ${esc(resumes.find((resume) => resume.id === result.resumeId)?.name ?? result.resumeId)}</button>`).join("") : "<p>暂无匹配历史</p>"}</div><div class="matching-current">${analysisHistory[0] ? renderResult(analysisHistory[0]) : ""}</div></section>${aiSection}<h4>简历使用历史</h4><ul>${history.map((entry) => `<li>${esc(entry.resumeNameSnapshot)}：${esc(entry.textSnapshot)}</li>`).join("") || "<li>暂无历史</li>"}</ul><h4>时间线</h4><ol>${timeline.map((entry) => `<li>${esc(entry.type)}：${esc(entry.note)}</li>`).join("") || "<li>暂无事件</li>"}</ol>`;
-    detail.hidden = false;
-  }
-
-  const renderAiResult = (result: AiAdvisorResult): string => `<article class="ai-result"><h5>匹配概览</h5><p>${esc(result.matchOverview || "暂无")}</p><h5>问题</h5><ul>${result.issues.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>建议</h5><ul>${result.suggestions.map((value) => `<li><span class="ai-suggestion-label">建议</span> ${esc(value.replace(/^建议：/, ""))}</li>`).join("") || "<li>暂无</li>"}</ul><h5>原文/改写对照</h5><ul>${result.rewrites.map((item) => `<li><strong>原文：</strong>${esc(item.original)}<br><strong>改写：</strong>${esc(item.rewrite)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>待补充信息</h5><ul>${result.missingInfo.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>风险提示</h5><ul>${result.risks.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul>${result.authenticityRisk ? `<p class="ai-authenticity-risk" role="alert">真实性风险：请核验所有内容，AI 不得虚构经历、技能、学历、成果或数字。</p>` : ""}</article>`;
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     setStatus("正在保存职位...");
@@ -341,21 +288,6 @@ export function createApplicationBoard(
     const action = target.dataset.action;
     try {
       if (target.dataset.view) { view = target.dataset.view as "board" | "list"; renderApplications(); return; }
-      if (action === "copy-ai-message") {
-        const text = target.dataset.message ?? "";
-        await navigator.clipboard?.writeText(text);
-        setStatus("已复制此段 AI 内容");
-        return;
-      }
-      if (action === "copy-ai-all" && detailId && options.aiAdvisorService) {
-        const conversation = await options.aiAdvisorService.getConversation(detailId);
-        const text = (conversation?.messages ?? []).filter((message) => message.role !== "system").map((message) => `${message.role === "user" ? "我" : "AI"}：${message.content}`).join("\n\n");
-        await navigator.clipboard?.writeText(text); setStatus("已复制全部 AI 对话"); return;
-      }
-      if (action === "export-ai-report" && activeAdvisorResult) {
-        const blob = new Blob([exportAdvisorReport(activeAdvisorResult)], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob); const anchor = documentRef.createElement("a"); anchor.href = url; anchor.download = "ai-optimization-report.md"; anchor.click(); URL.revokeObjectURL(url); setStatus("优化报告已导出"); return;
-      }
       if (action === "confirm-jd" && pendingJobDescriptionId && options.jobDescriptionService) {
         const text = (form.elements.namedItem("jdText") as HTMLTextAreaElement).value;
         await options.jobDescriptionService.confirmText(pendingJobDescriptionId, text);
@@ -367,32 +299,7 @@ export function createApplicationBoard(
         resetForm();
         return;
       }
-      if (action === "details" && target.dataset.applicationId) { await showDetail(target.dataset.applicationId); return; }
-      if (action === "run-matching" && detailId && options.matchingService) {
-        const matchingStatus = detail.querySelector<HTMLElement>(".matching-status");
-        const resumeId = detail.querySelector<HTMLSelectElement>("[data-matching-resume]")?.value;
-        if (!resumeId) { if (matchingStatus) matchingStatus.textContent = "请先选择可用简历"; return; }
-        if (matchingStatus) matchingStatus.textContent = "正在本地匹配...";
-        try {
-          await options.matchingService.run(detailId, resumeId);
-          await showDetail(detailId);
-          setStatus("匹配结果已保存");
-        } catch {
-          if (matchingStatus) matchingStatus.textContent = "匹配失败，资料未改变；可重试";
-          setStatus("匹配失败，资料未改变；可重试");
-        }
-        return;
-      }
-      if (action === "open-analysis" && detailId && options.matchingService && target.dataset.analysisId) {
-        const result = await options.matchingService.get(target.dataset.analysisId);
-        if (!result) { setStatus("匹配结果不存在"); return; }
-        const current = detail.querySelector<HTMLElement>(".matching-current");
-        if (current) {
-          current.innerHTML = `<article class="matching-result"><dl class="matching-coverage"><div><dt>总体覆盖率</dt><dd>${result.coverage.overall}%</dd></div><div><dt>必需覆盖率</dt><dd>${result.coverage.required}%</dd></div><div><dt>加分覆盖率</dt><dd>${result.coverage.preferred}%</dd></div></dl><div class="matching-lists"><div><h5>明确匹配</h5><ul>${result.matchedKeywords.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>弱匹配</h5><ul>${result.weakMatches.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>缺失</h5><ul>${result.missingKeywords.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div><div><h5>待人工确认</h5><ul>${result.uncertainItems.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul></div></div><ul class="matching-evidence">${result.evidence.map((entry) => `<li><strong>${esc(entry.keyword)}</strong>：${esc(entry.excerpt)}</li>`).join("") || "<li>暂无证据</li>"}</ul><p class="matching-disclaimer">仅代表文本证据，不代表用户真实具备相关能力。</p></article>`;
-        }
-        setStatus("已打开历史匹配结果");
-        return;
-      }
+      if (action === "details" && target.dataset.applicationId) { options.bus?.emit("app-navigate", { name: "applications", applicationId: target.dataset.applicationId }); return; }
       if (action === "edit" && target.dataset.applicationId) {
         const item = applications.find((entry) => entry.id === target.dataset.applicationId);
         if (!item) return;
@@ -410,20 +317,13 @@ export function createApplicationBoard(
         setStatus("已载入职位编辑，尚未保存修改");
         return;
       }
-      if (action === "close-detail") { detail.hidden = true; detailId = undefined; return; }
       if (action === "advance" && target.dataset.applicationId) {
         const item = applications.find((entry) => entry.id === target.dataset.applicationId); const index = stages.findIndex((stage) => stage.id === item?.stageId); const next = stages[index + 1];
         if (item && next) { await applicationService.changeStage(item.id, next.id); applications = await applicationService.listApplications(); renderApplications(); setStatus("阶段已推进"); }
         return;
       }
-      if (action === "save-detail-stage" && detailId) { const value = detail.querySelector<HTMLSelectElement>("[data-detail-stage]")?.value; if (value) await applicationService.changeStage(detailId, value); applications = await applicationService.listApplications(); await showDetail(detailId); setStatus("阶段已保存"); return; }
-      if (action === "save-detail-resume" && detailId) { const value = detail.querySelector<HTMLSelectElement>("[data-detail-resume]")?.value; if (value) await applicationService.bindResume(detailId, value); applications = await applicationService.listApplications(); await showDetail(detailId); setStatus("当前简历已保存"); return; }
-      if (action === "save-detail-note" && detailId) { const value = detail.querySelector<HTMLTextAreaElement>("[data-detail-note]")?.value ?? ""; await applicationService.updateNote(detailId, value); applications = await applicationService.listApplications(); await showDetail(detailId); setStatus("备注已保存"); return; }
-      if ((action === "archive" || action === "delete") && target.dataset.applicationId) {
-        const id = target.dataset.applicationId; const preview = action === "archive" ? await applicationService.previewArchive(id) : await applicationService.previewDelete(id); pendingAction = { type: action, id, preview }; confirmSummary.textContent = `将${action === "archive" ? "归档" : "删除"}“${preview.company} / ${preview.position}”，关联历史 ${preview.resumeUsageCount} 条、时间线 ${preview.timelineEventCount} 条。`; openConfirm(target); setStatus("已打开操作预览，尚未修改数据"); return;
-      }
       if (action === "cancel-application-action") { closeConfirm(); setStatus("已取消操作，数据未改变"); return; }
-      if (action === "confirm-application-action" && pendingAction) { const pending = pendingAction; if (pending.type === "archive") await applicationService.confirmArchive(pending.id, pending.preview as never); else if (pending.type === "delete") await applicationService.confirmDelete(pending.id, pending.preview as never); else await stageService.deleteStage(pending.id, { confirmed: true, replacementStageId: pending.replacementStageId }); closeConfirm(); applications = await applicationService.listApplications(); stages = await stageService.listStages(); await renderStages(); renderApplications(); detail.hidden = true; setStatus(pending.type === "archive" ? "职位已归档" : pending.type === "delete" ? "职位已删除" : "阶段已删除"); return; }
+      if (action === "confirm-application-action" && pendingAction) { const pending = pendingAction; await stageService.deleteStage(pending.id, { confirmed: true, replacementStageId: pending.replacementStageId }); closeConfirm(); applications = await applicationService.listApplications(); stages = await stageService.listStages(); await renderStages(); renderApplications(); setStatus("阶段已删除"); return; }
       const stageItem = target.closest<HTMLElement>(".stage-manager__item");
       if (stageItem && action === "save-stage") { const id = stageItem.dataset.stageId!; await stageService.updateStage(id, { name: stageItem.querySelector<HTMLInputElement>("[data-stage-name]")?.value, color: stageItem.querySelector<HTMLInputElement>("[data-stage-color]")?.value }); stages = await stageService.listStages(); await renderStages(); renderApplications(); setStatus("阶段已保存"); return; }
       if (stageItem && (action === "move-stage-up" || action === "move-stage-down")) { const index = stages.findIndex((stage) => stage.id === stageItem.dataset.stageId); const next = action === "move-stage-up" ? index - 1 : index + 1; if (index >= 0 && next >= 0 && next < stages.length) { const ids = stages.map((stage) => stage.id); [ids[index], ids[next]] = [ids[next], ids[index]]; stages = await stageService.reorderStages(ids); await renderStages(); renderApplications(); setStatus("阶段顺序已保存"); } return; }
@@ -431,23 +331,8 @@ export function createApplicationBoard(
     } catch { setStatus("操作失败，请重试"); }
   });
 
-  root.addEventListener("submit", async (event) => {
-    const form = (event.target as HTMLElement).closest<HTMLFormElement>("[data-ai-form]");
-    if (!form || !detailId || !options.aiAdvisorService || !advisorPreview) return;
-    event.preventDefault();
-    const prompt = String(new FormData(form).get("prompt") ?? "");
-    const aiStatus = detail.querySelector<HTMLElement>(".ai-status");
-    try {
-      if (aiStatus) aiStatus.textContent = "正在生成发送预览...";
-      const preview = await options.aiAdvisorService.createPreview(detailId, prompt);
-      advisorPreview.open(preview);
-      if (aiStatus) aiStatus.textContent = "请确认发送预览";
-    } catch {
-      if (aiStatus) aiStatus.textContent = "无法生成发送预览，请检查本地 AI 设置后重试";
-      setStatus("无法生成发送预览，请检查本地 AI 设置后重试");
-    }
-  });
   documentRef.defaultView?.addEventListener("app-data-cleared", () => void load(), { signal: options.signal });
+  options.bus?.on("app-data-changed", () => void load());
 
   root.querySelector("#application-job-type")?.addEventListener("change", (event) => { filter = (event.target as HTMLSelectElement).value; renderApplications(); });
   root.querySelector("[data-show-archived]")?.addEventListener("change", (event) => { showArchived = (event.target as HTMLInputElement).checked; renderApplications(); });
