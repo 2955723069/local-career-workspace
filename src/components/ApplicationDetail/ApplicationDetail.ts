@@ -1,10 +1,14 @@
-import type { AnalysisResult, Application, Resume, Stage } from "../../db/types";
+import type { AnalysisResult, Application, Interview, Resume, Stage } from "../../db/types";
 import { exportAdvisorReport, parseAiAdvisorResult, type AiAdvisorResult, type AiAdvisorService } from "../../features/ai/aiAdvisorService";
 import type { ResumeLibraryService } from "../../features/resumes/resumeLibrary";
 import { createSendPreview, type SendPreviewElement } from "../SendPreview/SendPreview";
+import { createInterviewReview } from "../InterviewReview/InterviewReview";
 import type { AppBus } from "../../app/appBus";
 
-export type DetailTab = "overview" | "jd" | "resume" | "matching" | "ai" | "timeline" | "note";
+export type DetailTab = "overview" | "jd" | "resume" | "matching" | "ai" | "timeline" | "note" | "interview" | "review";
+
+const INTERVIEW_TYPE_LABEL: Record<string, string> = { phone: "电话", video: "视频", onsite: "现场", assessment: "测评", other: "其他" };
+const INTERVIEW_STATUS_LABEL: Record<string, string> = { scheduled: "已安排", completed: "已完成", cancelled: "已取消", rescheduled: "已改期" };
 export type ApplicationDetailElement = HTMLElement & { show(applicationId: string, tab?: DetailTab): Promise<void> };
 
 type ActionPreview = { id: string; company?: string; position?: string; name?: string; resumeUsageCount?: number; timelineEventCount?: number; applicationCount?: number; archived?: boolean; kind?: string };
@@ -17,6 +21,8 @@ const TABS: Array<{ key: DetailTab; label: string }> = [
   { key: "ai", label: "AI" },
   { key: "timeline", label: "时间线" },
   { key: "note", label: "备注" },
+  { key: "interview", label: "面试" },
+  { key: "review", label: "复盘" },
 ];
 
 export interface ApplicationDetailOptions {
@@ -47,6 +53,8 @@ export interface ApplicationDetailOptions {
     get(id: string): Promise<AnalysisResult | undefined>;
   };
   aiAdvisorService?: Pick<AiAdvisorService, "createPreview" | "send" | "getConversation">;
+  interviewService?: { listInterviews(applicationId?: string): Promise<Interview[]> };
+  reviewService?: { getReview(interviewId: string): Promise<any>; saveReview(interviewId: string, input: any): Promise<any> };
   bus?: AppBus;
   signal?: AbortSignal;
 }
@@ -127,6 +135,18 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
     root.append(previewElement);
   }
 
+  const reviewComponent = createInterviewReview(documentRef, { reviewService: options.reviewService });
+  // 详情内嵌的复盘实例与顶层面试日历页的复盘实例共用 data-component="interview-review" 及内部
+  // data-review-field/data-action 等通用选择器。为避免污染整页（顶层日历/仪表盘的未限定
+  // querySelector 会误命中此处未使用的副本），仅在 show() 首次实际渲染详情时才挂载进 DOM。
+  reviewComponent.removeAttribute("data-component");
+  let reviewMounted = false;
+  const ensureReviewMounted = () => {
+    if (reviewMounted) return;
+    reviewMounted = true;
+    panelFor("review").appendChild(reviewComponent);
+  };
+
   function activateTab(tab: DetailTab): void {
     currentTab = tab;
     root.querySelectorAll<HTMLButtonElement>("[data-detail-tab]").forEach((button) => {
@@ -143,17 +163,19 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
 
   root.show = async (applicationId: string, tab: DetailTab = "overview"): Promise<void> => {
     if (!options.applicationService) return;
+    ensureReviewMounted();
     applications = await applicationService.listApplications();
     const item = applications.find((entry) => entry.id === applicationId);
     if (!item) return;
     currentId = applicationId;
     stages = await stageService.listStages();
     resumes = options.resumeLibrary ? await options.resumeLibrary.search("") : [];
-    const [timeline, history, analysisHistory, conversation] = await Promise.all([
+    const [timeline, history, analysisHistory, conversation, interviews] = await Promise.all([
       applicationService.listTimeline(applicationId),
       applicationService.listResumeUsageHistory(applicationId),
       options.matchingService?.listHistory(applicationId) ?? Promise.resolve([]),
       options.aiAdvisorService?.getConversation(applicationId) ?? Promise.resolve(undefined),
+      options.interviewService?.listInterviews(applicationId) ?? Promise.resolve([]),
     ]);
     const latestAssistant = conversation?.messages.slice().reverse().find((message) => message.role === "assistant");
     activeAdvisorResult = undefined;
@@ -175,6 +197,19 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
     panelFor("timeline").innerHTML = `<h4>时间线</h4><ol>${timeline.map((entry) => `<li>${esc(entry.type)}：${esc(entry.note)}</li>`).join("") || "<li>暂无事件</li>"}</ol>`;
 
     panelFor("note").innerHTML = `<label>添加备注<textarea data-detail-note rows="4">${esc(item.note)}</textarea></label><button type="button" data-action="save-detail-note">保存备注</button>`;
+
+    panelFor("interview").innerHTML = `
+      <div class="application-detail__actions"><button type="button" data-action="open-interview-calendar">去面试日历安排</button></div>
+      <ul class="detail-interview-list">${interviews.length ? interviews.map((iv) => `
+        <li data-interview-id="${esc(iv.id)}">
+          <strong>第${esc(iv.round)}轮 · ${esc(INTERVIEW_TYPE_LABEL[iv.type] ?? iv.type)}</strong>
+          <span>${esc(iv.title)}</span>
+          <time datetime="${esc(iv.startsAt)}">${esc(new Date(iv.startsAt).toLocaleString())}</time>
+          <span class="detail-interview-status">${esc(INTERVIEW_STATUS_LABEL[iv.status] ?? iv.status)}</span>
+          ${iv.interviewer ? `<span>面试官：${esc(iv.interviewer)}</span>` : ""}
+          <button type="button" data-action="fill-review" data-interview-id="${esc(iv.id)}">填写复盘</button>
+        </li>`).join("") : "<li>本职位暂无面试；点上方按钮去面试日历安排。</li>"}</ul>`;
+    // review 面板由 InterviewReview 组件自管理，show() 跳过它，避免重写销毁已挂载的组件。
 
     activateTab(tab);
     setStatus(`已载入“${item.company} / ${item.position}”详情`);
@@ -272,6 +307,16 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
         confirmSummary.textContent = `将${action === "archive" ? "归档" : "删除"}"${preview.company} / ${preview.position}"，关联历史 ${preview.resumeUsageCount} 条、时间线 ${preview.timelineEventCount} 条。`;
         openConfirm(target);
         setStatus("已打开操作预览，尚未修改数据");
+        return;
+      }
+      if (action === "fill-review" && target.dataset.interviewId) {
+        reviewComponent.dispatchEvent(new CustomEvent("interview-selected", { detail: target.dataset.interviewId }));
+        activateTab("review");
+        if (currentId) options.bus?.emit("app-navigate", { name: "applications", applicationId: currentId, tab: "review" });
+        return;
+      }
+      if (action === "open-interview-calendar") {
+        options.bus?.emit("app-navigate", { name: "interviews" });
         return;
       }
       if (action === "cancel-application-action") {
