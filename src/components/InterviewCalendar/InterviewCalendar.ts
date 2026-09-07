@@ -127,7 +127,8 @@ export function createInterviewCalendar(documentRef: Document, options: Intervie
         if (dateStr.slice(0, 7) !== month) classes.push("calendar-cell--outside");
         if (dateStr === today) classes.push("calendar-cell--today");
         if (dateStr === selectedDay) classes.push("calendar-cell--selected");
-        const label = count ? `${dayNum} 日，${count} 场面试` : `${dayNum} 日`;
+        const dayLabel = dateStr.slice(0, 7) !== month ? dateStr : `${dayNum} 日`;
+        const label = count ? `${dayLabel}，${count} 场面试` : dayLabel;
         return `<button type="button" role="gridcell" class="${classes.join(" ")}" data-calendar-day="${dateStr}" aria-pressed="${dateStr === selectedDay}" aria-label="${label}"><span class="calendar-cell__date">${dayNum}</span>${count ? `<span class="calendar-cell__count" aria-hidden="true">●${count}</span>` : ""}</button>`;
       }).join("");
       const dayInterviews = records.filter((item) => isoToLocalInput(item.startsAt, item.timezone).slice(0, 10) === selectedDay);
@@ -145,7 +146,7 @@ export function createInterviewCalendar(documentRef: Document, options: Intervie
     status.textContent = `${visibleCount} 场面试 · ${view === "day" ? "日" : view === "week" ? "周" : "月"}视图${failures.length ? ` · ${failures.length} 个通知失败，已保留应用内提醒` : ""}`;
   };
   const refresh = async () => { records = await service.listInterviews(); render(); };
-  const load = async () => { try { applications = options.applications ? await options.applications() : []; appSelect.innerHTML = applications.map((application) => `<option value="${escapeHtml(application.id)}">${escapeHtml(application.company)} · ${escapeHtml(application.position)}</option>`).join(""); await refresh(); if (records.length && !records.some((item) => inRange(item, anchor.value, "day"))) { const nearest = records.reduce((candidate, item) => Math.abs(Date.parse(item.startsAt) - now.getTime()) < Math.abs(Date.parse(candidate.startsAt) - now.getTime()) ? item : candidate); anchor.value = isoToLocalInput(nearest.startsAt, nearest.timezone).slice(0, 10); render(); } if (records[0]) root.dispatchEvent(new CustomEvent("interview-selected", { detail: records[0].id })); } catch { status.textContent = "面试读取失败，可重试"; } };
+  const load = async () => { try { applications = options.applications ? await options.applications() : []; appSelect.innerHTML = applications.map((application) => `<option value="${escapeHtml(application.id)}">${escapeHtml(application.company)} · ${escapeHtml(application.position)}</option>`).join(""); await refresh(); if (records.length && !records.some((item) => inRange(item, anchor.value, "day"))) { const nearest = records.reduce((candidate, item) => Math.abs(Date.parse(item.startsAt) - now.getTime()) < Math.abs(Date.parse(candidate.startsAt) - now.getTime()) ? item : candidate); anchor.value = isoToLocalInput(nearest.startsAt, nearest.timezone).slice(0, 10); if (view === "month") selectedDay = anchor.value; render(); } if (records[0]) root.dispatchEvent(new CustomEvent("interview-selected", { detail: records[0].id })); } catch { status.textContent = "面试读取失败，可重试"; } };
   const resetForm = () => { form.reset(); editingId = undefined; (form.querySelector("[data-form-title]") as HTMLElement).textContent = "创建面试"; (form.querySelector('[data-action="cancel-edit"]') as HTMLButtonElement).hidden = true; };
 
   form.addEventListener("submit", async (event) => {
@@ -168,6 +169,7 @@ export function createInterviewCalendar(documentRef: Document, options: Intervie
       const wasEditing = Boolean(editingId);
       const saved = editingId && service.updateInterview ? await service.updateInterview(editingId, input) : await service.createInterview(input);
       anchor.value = isoToLocalInput(saved.startsAt, saved.timezone).slice(0, 10);
+      if (view === "month") selectedDay = anchor.value;
       // 编辑已有面试时，先清掉旧的定时器，避免旧提前量或旧渠道的通知重复触发。
       if (wasEditing) options.notificationService?.clearInterview?.(saved.id);
       let notificationFailed = false;
