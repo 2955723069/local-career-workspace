@@ -275,6 +275,25 @@
   gap: var(--s-4);
 }
 
+.application-form__more {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+}
+
+.application-form__more summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.application-form__more[open] summary {
+  margin-bottom: var(--s-3);
+}
+
+.application-form__more .application-form__grid {
+  margin-top: var(--s-3);
+}
+
 .application-form__actions {
   display: flex;
   flex-wrap: wrap;
@@ -483,11 +502,3 @@
   border-bottom: 1px solid var(--line);
 }
 
-.detail-interview-status {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: var(--fs-xs);
-  border-radius: var(--r-pill);
-  background: var(--accent-weak);
-  color: var(--accent-text);
-}

@@ -1,0 +1,20 @@
+/*
+ * 共享组件样式 — 跨模块复用的小型 UI 元件。
+ */
+
+/* 共享徽标（pill）：新增供后续复用，暂只迁移 detail-interview-status；
+   usage-badge / resume-default-badge / application-card__archived-badge 暂不动（YAGNI，避免视觉回归）。 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border-radius: var(--r-pill);
+  background: var(--accent-weak);
+  color: var(--accent-text);
+}
+
+.badge--muted {
+  background: var(--surface-2);
+  color: var(--text-2);
+}

@@ -6,6 +6,7 @@ test("creates a job with JD and reference URL, then switches views", async ({ pa
   await expect(page.locator("#application-board-title")).toHaveText("职位申请");
   await page.getByRole("textbox", { name: "公司", exact: true }).fill("E2E 公司");
   await page.getByRole("textbox", { name: "职位", exact: true }).fill("前端工程师");
+  await page.locator('form[data-form="application"] .application-form__more > summary').click();
   await page.getByRole("textbox", { name: "招聘网址", exact: true }).fill("https://example.test/jobs/e2e");
   await page.getByRole("textbox", { name: "确认 JD 文本", exact: true }).fill("TypeScript React");
   await page.locator('form[data-form="application"] button[data-submit-application]').click({ force: true });

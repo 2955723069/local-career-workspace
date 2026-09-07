@@ -1,5 +1,6 @@
 import type { Application } from "../../db/types";
 import type { DashboardService, DashboardSnapshot } from "../../features/dashboard/dashboardService";
+import { formatJobType, formatDateTime } from "../../ui/format";
 
 export interface DashboardOptions {
   dashboardService?: Pick<DashboardService, "getSnapshot">;
@@ -13,7 +14,7 @@ export function createDashboard(documentRef: Document, options: DashboardOptions
   const root = documentRef.createElement("section");
   root.className = "dashboard";
   root.setAttribute("aria-labelledby", "dashboard-title");
-  root.innerHTML = `<div class="section-heading"><div><p class="section-label">仪表盘</p><h2 id="dashboard-title">求职进展总览</h2></div><label for="dashboard-job-type">职位类型<select id="dashboard-job-type"><option value="">全部类型</option>${JOB_TYPES.map((type) => `<option value="${type}">${type}</option>`).join("")}</select></label></div><div class="dashboard-status" role="status" aria-live="polite">正在读取仪表盘...</div><div class="dashboard-grid"></div>`;
+  root.innerHTML = `<div class="section-heading"><div><p class="section-label">仪表盘</p><h2 id="dashboard-title">求职进展总览</h2></div><label for="dashboard-job-type">职位类型<select id="dashboard-job-type"><option value="">全部类型</option>${JOB_TYPES.map((type) => `<option value="${type}">${formatJobType(type)}</option>`).join("")}</select></label></div><div class="dashboard-status" role="status" aria-live="polite">正在读取仪表盘...</div><div class="dashboard-grid"></div>`;
   const status = root.querySelector<HTMLElement>(".dashboard-status")!;
   const grid = root.querySelector<HTMLElement>(".dashboard-grid")!;
   const filter = root.querySelector<HTMLSelectElement>("#dashboard-job-type")!;
@@ -28,7 +29,7 @@ export function createDashboard(documentRef: Document, options: DashboardOptions
     const resumes = value.recentResumes.map((resume) => `<li><span>${esc(resume.name)}</span><small>${esc(resume.fileName)}</small></li>`).join("");
     const matches = value.recentAnalysisResults.map(({ result, application }) => `<li><span>${esc(application.company)} · ${esc(application.position)}</span><small>覆盖率 ${Math.round(result.coverage.overall)}%</small></li>`).join("");
     grid.innerHTML = `<section class="dashboard-panel" aria-labelledby="dashboard-today-title"><h3 id="dashboard-today-title">今日面试 <span>${value.todayInterviews.length}</span></h3><ul>${today || "<li class=dashboard-empty>今天没有面试安排</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-actions-title"><h3 id="dashboard-actions-title">未来 7 日行动 <span>${value.upcomingActions.length}</span></h3><ul>${actions || "<li class=dashboard-empty>未来 7 日暂无行动</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-follow-title"><h3 id="dashboard-follow-title">待跟进职位 <span>${value.pendingFollowUps.length}</span></h3><ul>${followUps || "<li class=dashboard-empty>暂无待跟进职位</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-stage-title"><h3 id="dashboard-stage-title">阶段数量</h3><ul>${stages || "<li class=dashboard-empty>暂无阶段数据</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-review-title"><h3 id="dashboard-review-title">待复盘面试 <span>${value.pendingReviews.length}</span></h3><ul>${pending || "<li class=dashboard-empty>没有待复盘面试</li>"}</ul></section><section class="dashboard-panel dashboard-panel--warning" aria-labelledby="dashboard-failure-title"><h3 id="dashboard-failure-title">提醒失败 <span>${value.reminderFailures.length}</span></h3><p class="dashboard-fallback-note">通知不可用时，应用内提醒和 ICS 导出仍可使用。</p><ul>${failures || "<li class=dashboard-empty>暂无提醒失败</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-recent-resumes-title"><h3 id="dashboard-recent-resumes-title">最近简历 <span>${value.recentResumes.length}</span></h3><ul>${resumes || "<li class=dashboard-empty>暂无简历</li>"}</ul></section><section class="dashboard-panel" aria-labelledby="dashboard-recent-matches-title"><h3 id="dashboard-recent-matches-title">最近匹配 <span>${value.recentAnalysisResults.length}</span></h3><ul>${matches || "<li class=dashboard-empty>暂无匹配结果</li>"}</ul></section>`;
-    status.textContent = `已更新 · ${value.generatedAt}`;
+    status.textContent = `已更新 · ${formatDateTime(value.generatedAt)}`;
   };
 
   const load = async () => {

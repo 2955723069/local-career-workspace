@@ -63,7 +63,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
     mimeType: "application/pdf",
     buffer: Buffer.from(makePdf(RESUME_TEXT)) as never,
   });
-  await expect(page.locator(".resume-library-item__meta")).toContainText("needs-review");
+  await expect(page.locator(".resume-library-item__meta")).toContainText("待确认");
   await page.getByRole("button", { name: "预览文本" }).click({ force: true });
   const resumeEditor = page.getByLabel("确认简历文本");
   await expect(resumeEditor).toBeFocused();
@@ -72,7 +72,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
   await expect(page.locator(".resume-editor")).toBeHidden();
   await expect(page.locator(".resume-library-status")).toContainText("1 个简历版本");
   await page.reload();
-  await expect(page.locator(".resume-library-item__meta")).toContainText("ready");
+  await expect(page.locator(".resume-library-item__meta")).toContainText("就绪");
 
   await page.getByRole("tab", { name: "职位申请" }).click();
 
@@ -82,6 +82,7 @@ test("completes the offline resume-to-backup workflow on desktop and mobile", as
   await company.fill("离线 E2E 公司");
   await page.getByRole("textbox", { name: "职位", exact: true }).fill("前端工程师");
   await page.getByRole("textbox", { name: "确认 JD 文本", exact: true }).fill("TypeScript React");
+  await page.locator('form[data-form="application"] .application-form__more > summary').click();
   await page.locator("#application-deadline").fill(localDateTime(7, 17));
   const resumeSelect = page.getByLabel("当前简历");
   await expect(resumeSelect.locator("option")).toHaveCount(2);
