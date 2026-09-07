@@ -70,4 +70,10 @@ describe("application detail hub", () => {
     expect(el.querySelector('[data-detail-panel="timeline"]')?.hasAttribute("hidden")).toBe(false);
     expect(el.querySelector('[data-detail-panel="overview"]')?.hasAttribute("hidden")).toBe(true);
   });
+
+  it("show() resolves without throwing when services are absent (skeleton pass)", async () => {
+    const el = createApplicationDetail(document, {} as any) as ApplicationDetailElement;
+    document.body.append(el);
+    await expect(el.show("app-1")).resolves.toBeUndefined();
+  });
 });

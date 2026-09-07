@@ -335,6 +335,106 @@
   background: var(--danger-strong);
 }
 
+/* 申请详情中枢(子标签页) */
+.application-detail-view {
+  display: grid;
+  gap: var(--s-5);
+  margin-top: var(--s-6);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-5);
+}
+
+.application-detail__context {
+  display: grid;
+  gap: var(--s-1);
+}
+
+.application-detail__context h2 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  overflow-wrap: anywhere;
+}
+
+.application-detail__subtitle {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.application-detail__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--s-1);
+}
+
+.application-detail__tabs [data-detail-tab] {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.application-detail__tabs [data-detail-tab]:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+.application-detail__tabs [data-detail-tab][aria-selected="true"] {
+  color: var(--accent-text);
+  background: var(--accent-weak);
+  border-color: var(--accent-weak-border);
+  font-weight: var(--fw-semibold);
+}
+
+.application-detail__tabs [data-detail-tab][aria-selected="true"]:hover {
+  background: var(--accent-weak);
+}
+
+.application-detail__tabs [data-detail-tab]:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+.application-detail__panel {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.application-detail__panel[hidden] {
+  display: none;
+}
+
+.application-detail__status {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 720px) {
+  .application-detail__tabs {
+    gap: 0;
+  }
+
+  .application-detail__tabs [data-detail-tab] {
+    padding: 6px 10px;
+    font-size: var(--fs-xs);
+  }
+}
+
 @media (max-width: 720px) {
   .application-form__grid {
     grid-template-columns: minmax(0, 1fr);

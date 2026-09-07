@@ -142,6 +142,7 @@ export function createApplicationDetail(documentRef: Document, options: Applicat
   const renderAiResult = (result: AiAdvisorResult): string => `<article class="ai-result"><h5>匹配概览</h5><p>${esc(result.matchOverview || "暂无")}</p><h5>问题</h5><ul>${result.issues.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>建议</h5><ul>${result.suggestions.map((value) => `<li><span class="ai-suggestion-label">建议</span> ${esc(value.replace(/^建议：/, ""))}</li>`).join("") || "<li>暂无</li>"}</ul><h5>原文/改写对照</h5><ul>${result.rewrites.map((item) => `<li><strong>原文：</strong>${esc(item.original)}<br><strong>改写：</strong>${esc(item.rewrite)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>待补充信息</h5><ul>${result.missingInfo.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul><h5>风险提示</h5><ul>${result.risks.map((value) => `<li>${esc(value)}</li>`).join("") || "<li>暂无</li>"}</ul>${result.authenticityRisk ? `<p class="ai-authenticity-risk" role="alert">真实性风险：请核验所有内容，AI 不得虚构经历、技能、学历、成果或数字。</p>` : ""}</article>`;
 
   root.show = async (applicationId: string, tab: DetailTab = "overview"): Promise<void> => {
+    if (!options.applicationService) return;
     applications = await applicationService.listApplications();
     const item = applications.find((entry) => entry.id === applicationId);
     if (!item) return;
