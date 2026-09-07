@@ -27,3 +27,20 @@ test("keeps long application names readable on mobile", async ({ page }) => {
   await expect(page.locator("#application-board-title")).toBeVisible();
   await expect(page.locator(".application-form")).toBeVisible();
 });
+
+test("drags a card to another column to change its stage", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "职位申请" }).click();
+  await expect(page.locator("#application-board-title")).toHaveText("职位申请");
+  await page.getByRole("textbox", { name: "公司", exact: true }).fill("拖拽公司");
+  await page.getByRole("textbox", { name: "职位", exact: true }).fill("测试工程师");
+  await page.getByRole("textbox", { name: "确认 JD 文本", exact: true }).fill("拖拽测试");
+  await page.locator('form[data-form="application"] button[data-submit-application]').click({ force: true });
+  const card = page.locator('.application-card', { hasText: "拖拽公司" });
+  await expect(card).toBeVisible();
+  await card.dispatchEvent("dragstart");
+  const offerColumn = page.locator('.application-stage-column', { has: page.locator("h3 span", { hasText: "已获 Offer" }) });
+  await offerColumn.dispatchEvent("dragover");
+  await offerColumn.dispatchEvent("drop");
+  await expect(offerColumn.locator('.application-card', { hasText: "拖拽公司" })).toBeVisible();
+});

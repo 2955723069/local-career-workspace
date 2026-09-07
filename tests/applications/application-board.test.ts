@@ -143,4 +143,46 @@ describe("application board UI", () => {
     expect(matchingService.run).toHaveBeenCalledWith("application-1", "resume-a");
     expect(detailView?.querySelector(".matching-result")?.textContent).toContain("仅代表文本证据");
   });
+
+  it("drag-and-drops a card onto another column and changes its stage", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const deps = services();
+    const root = createApp(document, deps);
+    await flush();
+    const card = root.querySelector<HTMLElement>('.application-card[data-application-id="application-1"]')!;
+    expect(card.getAttribute("draggable")).toBe("true");
+    card.dispatchEvent(new Event("dragstart", { bubbles: true }));
+    const target = root.querySelector<HTMLElement>('.application-stage-column[data-stage-id="stage-offer"]')!;
+    target.dispatchEvent(new Event("dragover", { bubbles: true, cancelable: true }));
+    target.dispatchEvent(new Event("drop", { bubbles: true }));
+    await flush();
+    expect(deps.applicationService.changeStage).toHaveBeenCalledWith("application-1", "stage-offer");
+  });
+
+  it("dropping a card back on its own column does not call changeStage", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const deps = services();
+    const root = createApp(document, deps);
+    await flush();
+    const card = root.querySelector<HTMLElement>('.application-card[data-application-id="application-1"]')!;
+    card.dispatchEvent(new Event("dragstart", { bubbles: true }));
+    const same = root.querySelector<HTMLElement>('.application-stage-column[data-stage-id="stage-a"]')!;
+    same.dispatchEvent(new Event("drop", { bubbles: true }));
+    await flush();
+    expect(deps.applicationService.changeStage).not.toHaveBeenCalled();
+  });
+
+  it("moves a card's stage via the keyboard-accessible move-to select", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const deps = services();
+    const root = createApp(document, deps);
+    await flush();
+    const select = root.querySelector<HTMLSelectElement>('.application-card[data-application-id="application-1"] select[data-move-to]')!;
+    expect(select).toBeTruthy();
+    expect(select.value).toBe("stage-a"); // 默认选中当前阶段
+    select.value = "stage-offer";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
+    expect(deps.applicationService.changeStage).toHaveBeenCalledWith("application-1", "stage-offer");
+  });
 });

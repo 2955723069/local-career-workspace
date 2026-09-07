@@ -502,3 +502,19 @@
   border-bottom: 1px solid var(--line);
 }
 
+.application-card[draggable="true"] { cursor: grab; }
+.application-card--dragging { opacity: 0.5; cursor: grabbing; }
+.application-stage-column--drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -4px;
+  background: var(--accent-weak);
+}
+.application-card__move {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.application-card__move select { font-size: var(--fs-xs); }
+
