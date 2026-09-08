@@ -299,4 +299,47 @@ describe("interview calendar UI", () => {
     expect(detail.querySelectorAll(".interview-item")).toHaveLength(1);
     expect(detail.textContent).toContain("2026-10-05");
   });
+
+  it("renders the interview timezone control as a select with many zones", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [] } as any,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    const tz = root.querySelector<HTMLSelectElement>('[data-form="interview"] [name="timezone"]')!;
+    expect(tz.tagName).toBe("SELECT");
+    expect(tz.querySelectorAll("option").length).toBeGreaterThan(20);
+    expect(Array.from(tz.options).some((option) => option.value === "Asia/Shanghai")).toBe(true);
+    expect(Array.from(tz.options).some((option) => option.value === "UTC")).toBe(true);
+    expect(tz.value).not.toBe(""); // 默认选中一个有效时区（本地时区）
+    expect(Array.from(tz.options).some((option) => option.value === tz.value)).toBe(true);
+  });
+
+  it("keeps an unknown stored timezone selectable when editing", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [{ id: "i-1", applicationId: "a-1", round: 1, title: "Tech", startsAt: "2026-09-02T01:00:00.000Z", timezone: "Mars/Base", status: "scheduled", reminders: [], type: "video", locationOrLink: "", interviewer: "", note: "" }] } as any,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-action="edit"][data-interview-id="i-1"]') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 0));
+    const tz = root.querySelector<HTMLSelectElement>('[data-form="interview"] [name="timezone"]')!;
+    expect(tz.value).toBe("Mars/Base"); // 未知时区被补进选项并选中，回填不落空
+  });
+
+  it("renders the reschedule timezone control as a select and preselects the interview timezone", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [{ id: "i-1", applicationId: "a-1", round: 1, title: "Tech", startsAt: "2026-09-02T01:00:00.000Z", timezone: "Asia/Shanghai", status: "scheduled", reminders: [], type: "video", locationOrLink: "", interviewer: "", note: "" }] } as any,
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-action="reschedule"][data-interview-id="i-1"]') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 0));
+    const tz = root.querySelector<HTMLSelectElement>('[data-form="reschedule"] [name="timezone"]')!;
+    expect(tz.tagName).toBe("SELECT");
+    expect(tz.value).toBe("Asia/Shanghai");
+  });
 });
