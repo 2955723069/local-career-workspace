@@ -166,6 +166,55 @@ describe("backup and restore panel", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("applies a batch resolution to every conflict while keeping per-item overrides", async () => {
+    const session = importSession([
+      { storeName: "resumes", id: "resume-1", defaultResolution: "keep-local" },
+      { storeName: "applications", id: "app-1", defaultResolution: "keep-local" },
+    ]);
+    const backupService = service({ prepareBackupImport: vi.fn(async () => session) });
+    vi.stubGlobal("fetch", vi.fn());
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, { backupService });
+
+    setFile(root.querySelector<HTMLInputElement>("#backup-import-file")!);
+    const importPassword = root.querySelector<HTMLInputElement>("#backup-import-password")!;
+    importPassword.value = "restore-only";
+    submit(root.querySelector<HTMLFormElement>('[data-import-step="password"]')!);
+    await tick();
+    root.querySelector<HTMLButtonElement>('[data-action="review-conflicts"]')!.click();
+
+    const selects = () => [...root.querySelectorAll<HTMLSelectElement>("[data-conflict-resolution]")];
+    expect(selects()).toHaveLength(2);
+    expect(selects().every((select) => select.value === "keep-local")).toBe(true);
+
+    // 批量：全部使用备份
+    root.querySelector<HTMLButtonElement>('[data-batch-resolution="use-backup"]')!.click();
+    expect(selects().every((select) => select.value === "use-backup")).toBe(true);
+
+    // 逐项微调：把第二项改回导入副本
+    selects()[1].value = "import-copy";
+
+    root.querySelector<HTMLButtonElement>('[data-action="preview-import"]')!.click();
+    expect(backupService.buildImportPlan).toHaveBeenCalledWith(session, [
+      { storeName: "resumes", id: "resume-1", resolution: "use-backup" },
+      { storeName: "applications", id: "app-1", resolution: "import-copy" },
+    ]);
+  });
+
+  it("does not render batch buttons when there are no conflicts", async () => {
+    const backupService = service({ prepareBackupImport: vi.fn(async () => importSession()) });
+    vi.stubGlobal("fetch", vi.fn());
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, { backupService });
+    setFile(root.querySelector<HTMLInputElement>("#backup-import-file")!);
+    const importPassword = root.querySelector<HTMLInputElement>("#backup-import-password")!;
+    importPassword.value = "restore-only";
+    submit(root.querySelector<HTMLFormElement>('[data-import-step="password"]')!);
+    await tick();
+    root.querySelector<HTMLButtonElement>('[data-action="review-conflicts"]')!.click();
+    expect(root.querySelector("[data-batch-resolution]")).toBeNull();
+  });
+
   it.each([
     ["选择文件后", "password"],
     ["查看概览后", "overview"],

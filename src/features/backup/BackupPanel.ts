@@ -187,6 +187,19 @@ export function createBackupPanel(
       empty.textContent = "未检测到相同 ID。";
       conflicts.append(empty);
     }
+    if (session.conflicts.length > 0) {
+      const batch = documentRef.createElement("div");
+      batch.className = "backup-conflict-batch";
+      batch.setAttribute("role", "group");
+      batch.setAttribute("aria-label", "批量处理全部冲突");
+      batch.innerHTML = `
+        <span class="backup-conflict-batch__label">批量处理全部冲突：</span>
+        <button type="button" data-batch-resolution="keep-local">全部保留本地</button>
+        <button type="button" data-batch-resolution="use-backup">全部使用备份</button>
+        <button type="button" data-batch-resolution="import-copy">全部导入副本</button>
+      `;
+      conflicts.append(batch);
+    }
     for (const [index, conflict] of session.conflicts.entries()) {
       const row = documentRef.createElement("div");
       row.className = "backup-conflict backup-conflict--wrap";
@@ -346,6 +359,13 @@ export function createBackupPanel(
     if (!button) return;
     if (button.dataset.cancelAt) {
       cancelImport();
+      return;
+    }
+    if (button.dataset.batchResolution) {
+      const resolution = button.dataset.batchResolution;
+      const targets = steps.querySelectorAll<HTMLSelectElement>("[data-conflict-resolution]");
+      for (const select of targets) select.value = resolution;
+      setStatus(`已将全部 ${targets.length} 项冲突设为「${resolution === "keep-local" ? "保留本地" : resolution === "use-backup" ? "使用备份覆盖" : "导入为新副本"}」；仍可逐项调整后再生成预览。`);
       return;
     }
     if (button.dataset.action === "review-conflicts") {
