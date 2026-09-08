@@ -221,4 +221,82 @@ describe("interview calendar UI", () => {
     expect(root.querySelectorAll(".interview-item")).toHaveLength(1);
     expect((root.querySelector<HTMLInputElement>("#calendar-anchor")!).value).toBe("2026-09-02");
   });
+
+  const ivFixture = (id: string, startsAt: string) => ({ id, applicationId: "a-1", round: 1, title: `面试${id}`, startsAt, timezone: "UTC", status: "scheduled", reminders: [], type: "video", locationOrLink: "", interviewer: "", note: "" });
+
+  it("renders a 6x7 month grid with weekday headers in month view", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [ivFixture("i-1", "2026-09-15T02:00:00.000Z")] } as any,
+      now: () => new Date("2026-09-15T00:00:00.000Z"),
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-calendar-view="month"]') as HTMLButtonElement).click();
+    expect(root.querySelectorAll(".calendar-grid__weekdays [role=columnheader]")).toHaveLength(7);
+    expect(root.querySelectorAll(".calendar-cell")).toHaveLength(42);
+  });
+
+  it("marks days that have interviews with a count in month view", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [ivFixture("i-1", "2026-09-15T02:00:00.000Z")] } as any,
+      now: () => new Date("2026-09-15T00:00:00.000Z"),
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-calendar-view="month"]') as HTMLButtonElement).click();
+    expect(root.querySelector('[data-calendar-day="2026-09-15"] .calendar-cell__count')).toBeTruthy();
+    expect(root.querySelector('[data-calendar-day="2026-09-16"] .calendar-cell__count')).toBeFalsy();
+  });
+
+  it("clicking a day cell shows that day's interviews in the day detail", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: { listInterviews: async () => [ivFixture("i-1", "2026-09-15T02:00:00.000Z"), ivFixture("i-2", "2026-09-20T02:00:00.000Z")] } as any,
+      now: () => new Date("2026-09-15T00:00:00.000Z"),
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-calendar-view="month"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-calendar-day="2026-09-20"]') as HTMLButtonElement).click();
+    const detail = root.querySelector(".calendar-day-detail")!;
+    expect(detail.textContent).toContain("面试i-2");
+    expect(detail.querySelectorAll(".interview-item")).toHaveLength(1);
+    expect(root.querySelector('[data-calendar-day="2026-09-20"]')?.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("keeps the day detail following the anchor when a save lands in a different month (month view)", async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const interviews: any[] = [];
+    const interviewService = {
+      listInterviews: vi.fn(async () => interviews),
+      createInterview: vi.fn(async (input: any) => { const value = { ...input, id: `i-${interviews.length + 1}`, status: "scheduled" }; interviews.push(value); return value; }),
+      rescheduleInterview: vi.fn(async () => undefined),
+      cancelInterview: vi.fn(async () => undefined),
+      completeInterview: vi.fn(async () => undefined),
+    };
+    const root = createApp(document, {
+      applicationService: { listApplications: async () => [{ id: "a-1", company: "Acme", position: "Eng", jobType: "tech", stageId: "s" }] as any } as any,
+      interviewService: interviewService as any,
+      now: () => new Date("2026-09-15T00:00:00.000Z"),
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    (root.querySelector('[data-calendar-view="month"]') as HTMLButtonElement).click();
+    // Selected day starts in September (the anchor / today).
+    expect((root.querySelector<HTMLInputElement>("#calendar-anchor")!).value).toBe("2026-09-15");
+    // Create an interview in a DIFFERENT month (October) via the form submit path.
+    const form = root.querySelector<HTMLFormElement>('form[data-form="interview"]')!;
+    (form.elements.namedItem("round") as HTMLInputElement).value = "1";
+    (form.elements.namedItem("startsAt") as HTMLInputElement).value = "2026-10-05T09:00";
+    (form.elements.namedItem("timezone") as HTMLInputElement).value = "UTC";
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 0));
+    // Anchor jumped to the saved month; selectedDay/day-detail must follow.
+    expect((root.querySelector<HTMLInputElement>("#calendar-anchor")!).value).toBe("2026-10-05");
+    expect(root.querySelector('[data-calendar-day="2026-10-05"]')?.getAttribute("aria-pressed")).toBe("true");
+    const detail = root.querySelector(".calendar-day-detail")!;
+    expect(detail.querySelectorAll(".interview-item")).toHaveLength(1);
+    expect(detail.textContent).toContain("2026-10-05");
+  });
 });
