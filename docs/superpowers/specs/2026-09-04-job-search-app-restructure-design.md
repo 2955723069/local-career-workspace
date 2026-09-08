@@ -108,11 +108,13 @@ src/styles/components.css     通用组件类（新增）
    - **2a**（✅ 已完成，已合并 master）：抽取内联详情为 `createApplicationDetail` 路由枢纽页 + 子标签（概览 / JD / 简历 / 匹配 / AI / 时间线 / 备注——均为详情现已具备的内容）；顶层从 7 区收敛到 5 区（退役 matching/ai 顶层 tab 与独立组件）。← 体验质变在此发生。
    - **2b**（✅ 已完成，已合并 master）：把「本职位面试 + 复盘」作为新子标签接入详情页（按 applicationId 过滤 interviewService/reviewService）。
 3. **统一层期**（✅ 已完成，已合并 master）：`format.ts` 本地化 + 按钮层级 + 表单渐进披露 + `components.css`。
-4. **重交互期**（拆项交付，逐项独立 plan→执行→合并）：
+4. **重交互期**（✅ 已完成，已合并 master；拆项交付，逐项独立 plan→执行→合并）：
    - **4a**（✅ 已完成，已合并 master）：看板拖拽换列（拖卡跨列改 `stageId`，复用 `changeStage` 写 `stage-changed` 时间线）+ 键盘可达「移动到…」下拉无障碍兜底。
    - **4b**（✅ 已完成，已合并 master）：真·月历网格（6×7 格，每日面试数标记，点击格子展开当天详情，复用 interview-item 操作按钮；日/周视图不变）。
    - **4c**（✅ 已完成，已合并 master）：时区下拉选择器（`Intl.supportedValuesOf('timeZone')` 生成 select，回退内置列表，默认本地时区；edit/reschedule 回填补缺失项；提交契约不变）。
-   - **4d**：恢复冲突批量策略。
+   - **4d**（✅ 已完成，已合并 master）：恢复冲突批量策略（「全部保留本地/使用备份/导入副本」一键设置全部逐项下拉；逐项仍可微调；默认 keep-local 不覆盖本地；纯 UI 增强，不动备份格式/服务层）。
+
+**全部五期已完成并合并 master。** 本重整方案（信息架构收敛、代码结构治理、UI 统一层、四项重交互）全部落地。
 
 ## 9. 测试策略
 
