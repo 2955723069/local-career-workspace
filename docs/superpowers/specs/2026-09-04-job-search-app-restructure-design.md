@@ -111,7 +111,7 @@ src/styles/components.css     通用组件类（新增）
 4. **重交互期**（拆项交付，逐项独立 plan→执行→合并）：
    - **4a**（✅ 已完成，已合并 master）：看板拖拽换列（拖卡跨列改 `stageId`，复用 `changeStage` 写 `stage-changed` 时间线）+ 键盘可达「移动到…」下拉无障碍兜底。
    - **4b**（✅ 已完成，已合并 master）：真·月历网格（6×7 格，每日面试数标记，点击格子展开当天详情，复用 interview-item 操作按钮；日/周视图不变）。
-   - **4c**：时区下拉选择器（`Intl.supportedValuesOf`）。
+   - **4c**（✅ 已完成，已合并 master）：时区下拉选择器（`Intl.supportedValuesOf('timeZone')` 生成 select，回退内置列表，默认本地时区；edit/reschedule 回填补缺失项；提交契约不变）。
    - **4d**：恢复冲突批量策略。
 
 ## 9. 测试策略
