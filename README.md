@@ -40,9 +40,20 @@ TypeScript 离线前端、生产构建和浏览器 IndexedDB 数据层；简历�
 - **无服务端**：无账户、无云同步、无后端数据库；仅可选 AI 顾问在用户确认后向兼容
   接口发请求。
 
+## 获取代码
+
+```bash
+git clone https://github.com/2955723069/local-career-workspace.git
+cd local-career-workspace
+```
+
+不熟悉 git 的话，也可以在 GitHub 页面点 **Code → Download ZIP**，解压到一个
+路径较短的目录（例如 `C:\c3`）。Windows 上建议避开 OneDrive 同步目录和过深的
+路径，二者都可能导致 `npm install` 失败。
+
 ## Windows 一键启动（推荐给只想用的人）
 
-下载或克隆本仓库后，**双击根目录的 `启动.bat`**。脚本会自动完成：
+**双击根目录的 `启动.bat`**。脚本会自动完成：
 
 1. 检测 Node.js（不满足要求时用 `winget` 安装 LTS 版本）
 2. 首次运行自动 `npm install`
@@ -59,6 +70,24 @@ TypeScript 离线前端、生产构建和浏览器 IndexedDB 数据层；简历�
 > 必须通过 `localhost` 访问，不要直接双击 `dist/index.html`。应用使用 ES
 > modules、IndexedDB 和 Web Crypto，`file://` 协议下模块加载与加密备份都会失效。
 > 同理，通过局域网 IP（`http://192.168.x.x`）访问也不是安全上下文，加密备份会不可用。
+
+## 首次使用流程
+
+打开应用后是空的（没有示例数据）。建议按这个顺序走一遍，正好是一条完整闭环：
+
+1. **简历库** → 上传一份 PDF/DOCX 简历。上传后状态是「待确认」，点 **预览文本**
+   校对自动提取的文字（提取难免有误，可手动改），点 **确认文本** 后变为「就绪」。
+2. **职位申请** → 填公司和职位（仅这两项必填），把 JD 粘进「确认 JD 文本」，
+   在「当前简历」选刚才那份简历，保存。其余 10 个选填字段折叠在「更多信息」里。
+3. 点职位卡的 **查看详情** 进入详情枢纽页 → **匹配** 子标签 → 运行匹配，得到本地
+   关键词覆盖率与证据（完全离线，不调用任何接口）。
+4. **面试日历** → 安排面试（选时区、设提醒），面试结束后在详情页的 **复盘**
+   子标签记录复盘。看板上拖动职位卡即可改阶段。
+5. **设置与备份** → 导出一份加密备份并妥善保管密码。**密码无法找回或重置**，
+   遗忘即永久无法解密该文件。
+
+数据只存在当前浏览器的 IndexedDB 里：换浏览器、换设备或清理站点数据都不会自动
+同步或保留，跨设备迁移请走「导出备份 → 在另一台恢复」。
 
 ## 环境要求
 
@@ -105,6 +134,33 @@ npm run preview
 只输出文件路径和规则名，不输出文件正文或密钥内容。通过审计的 `dist/` 可以由普通
 静态文件服务器托管，不需要应用服务端。
 
+## 项目结构
+
+```
+src/
+  app/          组合根：createApp（挂载与接线）、appBus（事件总线）、router（hash 路由）
+  components/   UI 组件，均为 create*(documentRef, options) 工厂函数
+                Dashboard / ApplicationBoard / ApplicationDetail / ResumeLibrary
+                InterviewCalendar / InterviewReview / SettingsPage / SendPreview
+  features/     业务服务层：applications / resumes / interviews / reviews / stages
+                matching / job-descriptions / ai / backup / dashboard
+  db/           IndexedDB：schema、database、repositories、migrations、types
+  backup/       备份格式与加解密：crypto（PBKDF2 + AES-256-GCM）、format、importTransaction
+  matching/     本地关键词匹配：normalization、scoring
+  ai/           AI 顾问：client（兼容接口调用）、prompts
+  parsers/      简历解析：pdf（pdfjs-dist）、docx（mammoth）
+  calendar/     提醒与日历：reminders、notifications、ics
+  settings/     preferences（localStorage 偏好）、secrets（IndexedDB 敏感设置）
+  storage/      blobStore（原始文件）、dataManagement（数据统计与清除）
+  ui/           format（枚举与时间的展示层本地化）
+  styles/       tokens.css 设计令牌 + 分模块样式
+scripts/        start-windows.ps1（Windows 启动逻辑）、run-e2e.mjs、check-production.ts
+tests/          单元与集成测试；tests/e2e/ 为 Playwright 用例
+docs/           设计规格与实现计划
+```
+
+UI 层与服务层通过 `features/` 的服务接口交互，组件不直接访问 IndexedDB。
+
 ## 离线使用
 
 依赖安装和首次取得静态资源后，可以断开外网并继续使用本地开发服务器、
@@ -113,8 +169,9 @@ npm run preview
 应用 HTTP 请求。只有用户确认 AI 发送后，才会按本地配置向目标兼容接口发出请求。
 
 离线能力指应用和本地数据流程不依赖外网；浏览器仍需从本机或选定的静态文件
-服务器加载 `dist/` 资源。本任务没有注册 Service Worker，因此不会将首次访问过
-的远程站点自动缓存为可离线站点。
+服务器加载 `dist/` 资源。本项目没有注册 Service Worker，因此不会把首次访问过
+的远程站点自动缓存为可离线站点——离线使用请走本地启动（`启动.bat` 或
+`npm run dev`）。
 
 断网后仍可上传并管理 PDF/DOCX 简历、确认或手动校正提取文本、创建职位并粘贴
 JD、绑定和切换当前简历、跟踪申请阶段、运行浏览器内本地匹配、安排或改期面试、
@@ -126,8 +183,8 @@ JD、绑定和切换当前简历、跟踪申请阶段、运行浏览器内本地
   二进制文件的默认存储位置。
 - `localStorage` 仅允许保存少量界面设置和迁移标记，禁止保存原始文件、Blob、
   简历文本、JD 文本或其他业务正文。
-- API 地址、模型、API Key、组织 ID 和自定义请求头将通过独立的本地敏感设置
-  接口管理，不得写入业务记录或备份。
+- API 地址、模型、API Key、组织 ID 和自定义请求头由独立的本地敏感设置接口
+  （`src/settings/secrets.ts`）管理，不写入业务记录或备份。
 - 浏览器数据属于当前浏览器配置文件。清理站点数据可能永久删除本地记录，重要
   资料应定期导出完整加密备份，并在清除前确认备份文件和密码均可用。
 
